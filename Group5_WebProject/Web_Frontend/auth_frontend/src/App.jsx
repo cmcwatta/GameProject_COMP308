@@ -1,15 +1,11 @@
-import { useState } from 'react'
-import AuthComponents from './components/AuthComponents.jsx'
-import './App.css'
+import AuthComponents from "./components/AuthComponents";
 
 function App() {
   return (
-    <>
-      <div>
-        <AuthComponents />
-      </div>
-    </>
-  )
+    <div>
+      <AuthComponents />
+    </div>
+  );
 }
 
-export default App
+export default App;

@@ -1,187 +1,131 @@
-/* User Sign-In and Registration Component with Role Selection */
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import gql from 'graphql-tag';
-
-const REGISTER_USER = gql`
-  mutation Register($username: String!, $email: String!, $password: String!, $role: String!) {
-    register(username: $username, email: $email, password: $password, role: $role) {
-      token
-      user {
-        id
-        username
-        email
-        role
-      }
-    }
-  }
-`;
-
-const LOGIN_USER = gql`
-  mutation Login($username: String!, $password: String!) {
-    login(username: $username, password: $password) {
-      token
-      user {
-        id
-        username
-        email
-        role
-      }
-    }
-  }
-`;
+import axios from 'axios';
 
 const AuthComponents = () => {
-  const [isRegistering, setIsRegistering] = useState(true);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'resident'
-  });
+    const [isSignUp, setIsSignUp] = useState(true);
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState('Resident'); // NEW default role
+    const [message, setMessage] = useState('');
 
-  const [register] = useMutation(REGISTER_USER);
-  const [login] = useMutation(LOGIN_USER);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-  const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
+        const mutation = isSignUp
+            ? `
+                mutation {
+                    signup(
+                        username: "${username}",
+                        email: "${email}",
+                        password: "${password}",
+                        role: "${role}"
+                    ) {
+                        token
+                        user {
+                            username
+                            email
+                            role
+                        }
+                    }
+                }
+            `
+            : `
+                mutation {
+                    signin(email: "${email}", password: "${password}") {
+                        token
+                        user {
+                            username
+                            email
+                            role
+                        }
+                    }
+                }
+            `;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+        try {
+            const response = await axios.post(
+                'http://localhost:4001/graphql',
+                { query: mutation },
+                { withCredentials: true }
+            );
 
-    try {
-      if (isRegistering) {
-        const { data } = await register({ variables: formData });
-        console.log('Registered:', data.register);
-        alert(`Welcome ${data.register.user.username}!`);
-      } else {
-        const { data } = await login({
-          variables: {
-            username: formData.username,
-            password: formData.password
-          }
-        });
-        console.log('Logged In:', data.login);
-        alert(`Logged in as ${data.login.user.username}`);
-      }
-    } catch (error) {
-      console.error('Auth Error:', error);
-      alert(error.message);
-    }
-  };
+            const data = response.data;
 
-  return (
-    <div style={styles.container}>
-      <h2>{isRegistering ? 'Create Account' : 'Log In'}</h2>
+            if (data.errors) {
+                setMessage(data.errors[0].message);
+            } else {
+                if (isSignUp) {
+                    setMessage('Sign up successful!');
+                } else {
+                    setMessage('Sign in successful!');
+                    window.location.href = 'http://localhost:5174/';
+                }
+            }
+        } catch (error) {
+            setMessage('An error occurred. Please try again.');
+        }
+    };
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        {/* Username */}
-        <input
-          style={styles.input}
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={formData.username}
-          onChange={handleChange}
-          required
-        />
+    return (
+        <div>
+            <h2>{isSignUp ? 'Sign Up' : 'Sign In'}</h2>
 
-        {/* Email (Register only) */}
-        {isRegistering && (
-          <input
-            style={styles.input}
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        )}
+            <form onSubmit={handleSubmit}>
+                {isSignUp && (
+                    <>
+                        <div>
+                            <label>Username:</label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                            />
+                        </div>
 
-        {/* Password */}
-        <input
-          style={styles.input}
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+                        {/* ROLE DROPDOWN */}
+                        <div>
+                            <label>Role:</label>
+                            <select value={role} onChange={(e) => setRole(e.target.value)}>
+                                <option value="Resident">Resident</option>
+                                <option value="Municipal Staff">Municipal Staff</option>
+                                <option value="Community Advocate">Community Advocate</option>
+                            </select>
+                        </div>
+                    </>
+                )}
 
-        {/* Role dropdown (Register only) */}
-        {isRegistering && (
-          <select
-            style={styles.input}
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-          >
-            <option value="resident">Resident</option>
-            <option value="admin">Admin</option>
-            <option value="caregiver">Caregiver</option>
-          </select>
-        )}
+                <div>
+                    <label>Email:</label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
 
-        <button type="submit" style={styles.button}>
-          {isRegistering ? 'Register' : 'Login'}
-        </button>
-      </form>
+                <div>
+                    <label>Password:</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
 
-      <button
-        onClick={() => setIsRegistering(prev => !prev)}
-        style={styles.switchButton}
-      >
-        {isRegistering ? 'Already have an account? Log in' : 'Create an account'}
-      </button>
-    </div>
-  );
-};
+                <button type="submit">{isSignUp ? 'Sign Up' : 'Sign In'}</button>
+            </form>
 
-// Simple inline styling
-const styles = {
-  container: {
-    maxWidth: '350px',
-    margin: '20px auto',
-    padding: '20px',
-    borderRadius: '12px',
-    border: '1px solid #ddd',
-    background: '#fefefe',
-    textAlign: 'center'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  input: {
-    padding: '10px',
-    fontSize: '16px',
-    borderRadius: '6px',
-    border: '1px solid #ccc'
-  },
-  button: {
-    padding: '10px',
-    background: '#007bff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '16px'
-  },
-  switchButton: {
-    marginTop: '15px',
-    background: 'transparent',
-    border: 'none',
-    color: '#007bff',
-    cursor: 'pointer',
-    fontSize: '14px'
-  }
+            <button onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? 'Switch to Sign In' : 'Switch to Sign Up'}
+            </button>
+
+            {message && <p>{message}</p>}
+        </div>
+    );
 };
 
 export default AuthComponents;
