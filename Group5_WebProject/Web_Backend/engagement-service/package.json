@@ -1,0 +1,40 @@
+{
+  "name": "engagement-service",
+  "version": "1.0.0",
+  "description": "Civic engagement microservice: issue reporting, staff management, volunteer coordination",
+  "main": "engagement-microservice.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon engagement-microservice.js",
+    "start": "node engagement-microservice.js",
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "civic",
+    "microservice",
+    "graphql",
+    "apollo",
+    "issues",
+    "volunteer"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^4.10.0",
+    "@apollo/subgraph": "^2.4.6",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "graphql": "^16.7.1",
+    "graphql-tag": "^2.12.6",
+    "mongoose": "^7.8.8",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "eslint-plugin-node": "^11.1.0",
+    "nodemon": "^3.0.2"
+  }
+}
