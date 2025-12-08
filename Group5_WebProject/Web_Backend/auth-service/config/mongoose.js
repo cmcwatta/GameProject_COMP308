@@ -8,7 +8,10 @@ const connectDB = async () => {
       throw new Error("MongoDB URI is undefined. Check your environment variables.");
     }
 
-    await mongoose.connect(config.db);
+    await mongoose.connect(config.db, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
     console.log(`✅ Auth Service connected to MongoDB at ${config.db}`);
   } catch (error) {

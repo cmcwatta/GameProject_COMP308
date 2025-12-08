@@ -51,26 +51,71 @@ const server = new ApolloServer({
 });
 async function startServer() {
   await server.start();
-    app.use("/graphql", expressMiddleware(server, {
-      context: async ({ req, res }) => {
-        // You can add authentication context here if needed
-        return { req, res };
-        },
-    }));
-}
-await startServer();
-// File upload endpoint
-app.post("/upload", upload.single("file"), (req, res) => {
+  
+  app.use("/graphql", expressMiddleware(server, {
+    context: async ({ req, res }) => {
+      // Authentication context
+      const token = req.cookies?.token || 
+                   req.headers.authorization?.split(' ')[1];
+      
+      let user = null;
+      
+      if (token) {
+        try {
+          // Verify JWT token
+          const jwt = await import('jsonwebtoken');
+          const decoded = jwt.verify(token, config.jwt.secret);
+          user = {
+            userId: decoded.userId,
+            username: decoded.username,
+            email: decoded.email,
+            role: decoded.role
+          };
+        } catch (error) {
+          console.error("Token verification failed:", error.message);
+        }
+      }
+      
+      return { user, req, res };
+    },
+  }));
+  
+  // File upload endpoint
+  app.post("/upload", upload.single("file"), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ message: "No file uploaded" });
     }
-    res.status(200).json({ message: "File uploaded successfully", filePath: req.file.path });
+    
+    // Return relative path for client
+    const filePath = `/uploads/issues/${path.basename(req.file.path)}`;
+    
+    res.status(200).json({ 
+      message: "File uploaded successfully", 
+      filePath: filePath,
+      filename: req.file.filename
+    });
+  });
+  
+  // Serve uploaded files
+  app.use('/uploads', express.static(uploadFolder));
+  
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({
+      status: 'healthy',
+      service: 'Engagement Service',
+      timestamp: new Date().toISOString(),
+      uploadsFolder: config.uploads.folder
+    });
+  });
+  
+  // Start the server
+  const PORT = config.server.port;
+  app.listen(PORT, () => {
+    console.log(`🚀 Engagement Service running on port ${PORT}`);
+    console.log(`📡 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    console.log(`📁 Uploads folder: ${uploadFolder}`);
+  });
 }
-);
-// Start the server
-const PORT = config.server.port || 4003;
-app.listen(PORT, () => {
-  console.log(`🚀 Engagement Service running on port ${PORT}`);
-});
 
-
+startServer().catch(console.error);

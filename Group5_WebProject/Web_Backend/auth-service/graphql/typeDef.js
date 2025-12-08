@@ -27,8 +27,9 @@ const typeDef = gql`
         login(username: String!, password: String!): AuthPayload!
         signin(email: String!, password: String!): AuthPayload
         signup(username: String!, email: String!, password: String!): AuthPayload
+        logout: Boolean!
     }
 
 `;
 export default typeDef;
-export { typeDef };
+//export { typeDef };
