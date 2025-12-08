@@ -749,7 +749,7 @@ MongoDB
 
 ---
 
-## 5. AI Integration Details
+## 5. AI Integration & Game Design Details
 
 ### 5.1 Gemini API Integration
 
@@ -765,24 +765,29 @@ const model = genAI.getGenerativeModel({
 ```
 
 **Use Cases**:
-1. **Chatbot**: Conversational Q&A on civic issues
-2. **Summarization**: Auto-generate concise issue summaries
-3. **Classification**: Categorize new reports
-4. **Trend Detection**: Identify similar issues and patterns
-5. **Sentiment Analysis**: Analyze resident and staff feedback
+1. **Chatbot**: Conversational Q&A on civic issues and game mechanics
+2. **Game Advisor**: Personalized progression and achievement advice
+3. **Challenge Generation**: Dynamically create themed challenges
+4. **Summarization**: Auto-generate concise issue summaries
+5. **Classification**: Categorize new reports with context awareness
+6. **Trend Detection**: Identify similar issues and emerging patterns
+7. **Sentiment Analysis**: Analyze resident and staff feedback
+8. **Content Generation**: Create engaging challenge descriptions and achievement hints
 
 ---
 
-### 5.2 Agentic Chatbot (LangGraph)
+### 5.2 Agentic Chatbot (LangGraph) with Game Features
 
-**Architecture**:
+**Extended Architecture**:
 ```
 User Input
   ↓
-[Intent Recognition] → Determine action (Q&A, search, analysis, etc.)
+[Intent Recognition] → Determine action (Q&A, game advice, search, analysis, etc.)
   ↓
 [Tool Selection] → Choose appropriate tools
   ├─ issue-query-tool (fetch from database)
+  ├─ game-stats-tool (retrieve player game data)
+  ├─ challenge-recommendation-tool (suggest challenges)
   ├─ trend-analysis-tool (analyze patterns)
   ├─ notification-tool (send alerts)
   └─ gemini-inference (generate responses)
@@ -794,7 +799,7 @@ User Input
 User Response
 ```
 
-**LangGraph Workflow**:
+**LangGraph Workflow Example**:
 ```python
 from langgraph.graph import StateGraph
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -802,89 +807,152 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # Define agent state
 class AgentState(TypedDict):
     input: str
+    userId: str
+    context: Dict
     intermediate_steps: List[Tuple[AgentAction, str]]
     output: str
+    gameRecommendations: Optional[List]
 
 # Build graph
 graph = StateGraph(AgentState)
 graph.add_node("agent", agent_node)
 graph.add_node("tools", tool_node)
+graph.add_node("game_advisor", game_advisor_node)
 graph.add_edge("agent", "tools")
 graph.add_edge("tools", "agent")
+graph.add_conditional_edge(
+    "agent",
+    lambda x: "game_advisor" if "game" in x["input"].lower() else "end"
+)
 
 # Compile and run
 app = graph.compile()
-result = app.invoke({"input": user_query})
+result = app.invoke({
+    "input": user_query,
+    "userId": current_user_id
+})
 ```
 
 **Civic Focus Example: Accessibility**
 - **Specialized Capability**: Accessibility queries and recommendations
+- **Game Integration**: Accessibility challenges, accessibility advocate badges
 - **Sample Bot Interactions**:
   - "What accessibility issues are reported in downtown?"
   - "How many accessibility improvements have been completed?"
   - "Can you recommend accessibility-friendly routes in my area?"
+  - "I'm working on accessibility issues - what challenges are available?"
+  - "How can I earn the 'Accessibility Advocate' badge?"
 
 ---
 
-### 5.3 Optional AI Features
+### 5.3 Game Economy Design
 
-#### **AI Summarization**
+#### **XP/Points System**
 ```
-Long Issue Discussion (5000+ words)
-  ↓
-[Chunking] → Split into manageable segments
-  ↓
-[Gemini Summarization] → Generate summaries for each chunk
-  ↓
-[Aggregation] → Combine into coherent summary
-  ↓
-Concise Summary (200-300 words)
-```
-
-#### **Classification & Triage**
-```
-New Issue Report
-  ↓
-[Gemini Analysis] → Analyze title, description, attachments
-  ↓
-[Category Suggestion] → Recommend category + confidence
-  ↓
-[Priority Assessment] → Suggest priority level
-  ↓
-[Route Assignment] → Recommend department/staff
-  ↓
-Classified Issue with Suggestions
+Base Rewards:
+├─ Issue Creation
+│  ├─ Basic Report: 10 XP
+│  ├─ Quality Multiplier: 1.0x - 2.0x (based on detail, clarity)
+│  ├─ Resolved Bonus: 50 XP (awarded when issue is resolved)
+│  └─ Max per Issue: 60 XP
+├─ Community Engagement
+│  ├─ Comment: 5 XP
+│  ├─ Helpful Vote Received: 1 XP (max 10 per post)
+│  ├─ Issue Marked as Helpful: 25 XP
+│  └─ Monthly Top Contributor: 100 XP
+├─ Streaks
+│  ├─ 7-Day Activity Streak: +5 XP per day
+│  ├─ 30-Day Streak: +10 XP per day
+│  ├─ Annual Recognition: 1000 XP
+│  └─ Streak Reset: 48 hours of inactivity
+└─ Challenges
+   ├─ Easy: 25 XP
+   ├─ Medium: 50 XP
+   ├─ Hard: 100 XP
+   └─ Epic: 200+ XP + special rewards
 ```
 
-#### **Trend Detection**
+#### **Level Progression**
 ```
-Issue Database Scan
-  ↓
-[Clustering] → Group similar issues
-  ↓
-[Pattern Analysis] → Identify trends and correlations
-  ↓
-[Gemini Insights] → Generate human-readable insights
-  ↓
-Trend Report with Visualizations
+Level Calculation:
+  level = floor(totalXP / 100)
+  xpToNextLevel = 100 - (totalXP % 100)
+  
+Level Milestones (example):
+  Level 1-5: Rookie (green)
+  Level 6-15: Contributor (blue)
+  Level 16-30: Advocate (purple)
+  Level 31-50: Champion (gold)
+  Level 50+: Legend (platinum)
+  
+Level-Up Rewards:
+  ├─ Unlock new challenges
+  ├─ New title/badge eligibility
+  ├─ Profile customization options
+  ├─ Leaderboard visibility
+  └─ Special event invitations
 ```
 
-#### **Sentiment Analysis**
+#### **Balancing Mechanics**
 ```
-Comment/Issue Text
-  ↓
-[Gemini Analysis] → Analyze sentiment
-  ↓
-[Score Calculation] → Range -1 (negative) to +1 (positive)
-  ↓
-[Label Assignment] → positive, neutral, negative
-  ↓
-Sentiment Metadata → Stored with issue/comment
+Fairness Controls:
+├─ XP Decay: Prevent inflation over time
+├─ Activity Caps: Daily max rewards to prevent grinding
+├─ Quality Thresholds: Require minimum quality for bonus XP
+├─ Report Moderation: Reduce XP for poor-quality submissions
+└─ Voting Weight: Established users' votes worth more
 ```
 
 ---
 
-## 6. Civic Focus Declaration
+### 5.4 Optional AI-Enhanced Game Features
+
+#### **Dynamic Challenge Generation**
+```
+Game Analytics Feed
+  ↓
+[Identify Trends] → Hot issues, underreported categories
+  ↓
+[Gemini Design] → Create themed challenges around trends
+  ↓
+[A/B Testing] → Test challenge appeal and difficulty
+  ↓
+Daily/Weekly Challenges
+```
+
+**Example Challenge**:
+"Accessibility Spotlight (Medium) - Report 3 accessibility issues 
+in transportation. Reward: 50 XP + 'Transit Advocate' badge progression"
+
+#### **AI-Powered Achievement Hints**
+```
+Player Approaching Achievement
+  ↓
+[Gemini Hint Generation] → Create non-spoiler guidance
+  ↓
+[Contextual Help] → "You're close to the 'Community Helper' badge.
+                      Keep voting helpfully on comments!"
+  ↓
+Motivational Nudge
+```
+
+#### **Personalized Progression Advice**
+```
+Game Profile Analysis
+  ├─ Play Style Detection (explorer, achiever, socializer)
+  ├─ Strength/Weakness Identification
+  └─ Optimal Path Suggestion
+  ↓
+[Gemini Analysis] → "You excel at quality issues. Try reporting 
+                     in the underrepresented sustainability category
+                     for accelerated leveling!"
+  ↓
+Player Gets Custom Roadmap
+```
+
+---
+
+## 6. Civic Focus Declaration & Game Integration
 
 **Chosen Civic Focus: Accessibility Issues**
 
@@ -892,15 +960,61 @@ Sentiment Metadata → Stored with issue/comment
 - Critical for inclusive community engagement
 - Clear, measurable outcomes
 - Diverse specialized queries (accessibility queries, recommendations)
-- Strong integration with AI capabilities
+- Strong integration with AI and game mechanics
+- Enables progressive challenge design
 
 **Specialized Chatbot Capabilities**:
 1. **Accessibility Queries**: "What accessibility barriers are reported near me?"
 2. **Recommendations**: "Can you suggest accessible routes/services?"
 3. **Trend Analysis**: Track improvement/decline in accessibility
 4. **Sentiment Tracking**: Monitor community sentiment on accessibility
+5. **Game-Enhanced Features**:
+   - Challenge recommendations for accessibility advocacy
+   - Personalized achievement paths for inclusive actions
+   - Community challenges around accessibility improvements
+   - Leaderboards for "Accessibility Champions"
+
+**Game-Themed Achievements for Accessibility Focus**:
+```
+Badge Name              Unlock Condition              XP Reward
+─────────────────────────────────────────────────────────────
+First Accessibility    Report 1 accessibility issue    10 XP
+Report
+
+Accessibility          Report 10 accessibility        50 XP
+Advocate               issues
+
+Accessibility          Help resolve 5 accessibility   100 XP
+Champion               issues
+
+Universal Designer     Receive 50 helpful votes on     200 XP
+                       accessibility feedback
+
+Accessibility Hero     Maintain 14-day streak while   150 XP
+                       reporting accessibility issues
+```
+
+**Game Challenges for Accessibility Focus**:
+```
+Challenge Title                Difficulty   XP   Duration
+──────────────────────────────────────────────────────────
+Accessibility Awareness         Easy        25    1 week
+Report 3 accessibility issues in your area
+
+Barrier Elimination             Medium      50    1 week
+Help resolve 2 accessibility issues
+
+Community Accessibility Push    Hard        100   1 month
+Report 15 accessibility issues across categories
+
+Accessibility Excellence        Epic        200   3 months
+Achieve 14-day streak + 100 helpful votes
+```
 
 **Requirement Alignment**: 100% (Exceeds 70% threshold)
+- 70% Core Requirements: ✓ All met
+- 30% Customization: Game mechanics (10%), Accessibility focus (10%), 
+                      Enhanced AI features (10%)
 
 ---
 
@@ -996,24 +1110,46 @@ Production
 
 ---
 
-## 10. Performance Optimization
+## 10. Performance Optimization & Game Mechanics
 
 ### 10.1 Frontend
-- **Code Splitting**: Lazy load routes and modules
-- **Image Optimization**: WebP with fallbacks
-- **Caching**: Service Workers, HTTP cache headers
+- **Code Splitting**: Lazy load routes, modules, and game components
+- **Image Optimization**: WebP with fallbacks for achievements, badges
+- **Caching**: Service Workers, HTTP cache headers, leaderboard caching
+- **Game State Management**: Efficient XP/level calculations on client
 - **Bundle Analysis**: Regular webpack analysis
+- **Animation Optimization**: Hardware-accelerated CSS for level-ups, achievements
 
 ### 10.2 Backend
-- **Database Indexing**: Index frequently queried fields
-- **Query Optimization**: Use aggregation pipelines
-- **Caching**: Redis for frequent queries
+- **Database Indexing**: Index frequently queried fields (userId, status, XP)
+- **Query Optimization**: Use aggregation pipelines for leaderboard calculations
+- **Caching**: Redis for leaderboards, player stats, challenge lists
 - **Connection Pooling**: MongoDB connection optimization
+- **Batch Operations**: Batch XP awards, leaderboard updates
 
-### 10.3 Monitoring
+### 10.3 Game-Specific Optimizations
+```
+Leaderboard Recalculation:
+├─ Scheduled jobs (hourly, daily, monthly) instead of real-time
+├─ Cached leaderboard snapshots
+└─ Incremental updates for active users
+
+XP Transactions:
+├─ Batch multiple XP updates
+├─ Async processing for non-critical rewards
+└─ Deferred achievement checking
+
+Challenge Completion:
+├─ Cached challenge progress
+├─ Event-driven notifications instead of polling
+└─ Bulk reward distribution
+```
+
+### 10.4 Monitoring
 - **Performance Metrics**: APM tools (e.g., New Relic, DataDog)
-- **Error Tracking**: Sentry integration
-- **Log Aggregation**: ELK Stack or CloudWatch
+- **Game Metrics**: Engagement rate, progression rate, daily active users
+- **Error Tracking**: Sentry integration for game service errors
+- **Log Aggregation**: ELK Stack or CloudWatch for game events
 
 ---
 
@@ -1021,14 +1157,17 @@ Production
 
 | Phase | Timeline | Deliverables |
 |-------|----------|--------------|
-| **Phase 1** | Week 1-2 | Auth service finalization, user model completion |
-| **Phase 2** | Week 2-3 | Engagement service & issue management |
-| **Phase 3** | Week 3-4 | Frontend modules (auth, issue, analytics) |
-| **Phase 4** | Week 4-5 | AI service setup, Gemini integration |
-| **Phase 5** | Week 5-6 | Agentic chatbot development & testing |
-| **Phase 6** | Week 6-7 | Optional AI features (summarization, classification, trends) |
-| **Phase 7** | Week 7-8 | Integration testing, performance optimization |
-| **Phase 8** | Week 8+ | Deployment, documentation, training |
+| **Phase 1** | Week 1-2 | Auth service finalization, user model with game profile references |
+| **Phase 2** | Week 2-3 | Engagement service & issue management, comment systems |
+| **Phase 3** | Week 3-4 | Gamification service setup (XP, levels, achievements) |
+| **Phase 4** | Week 4-5 | Challenge system and leaderboard implementation |
+| **Phase 5** | Week 5-6 | Frontend modules (auth, game/issue, analytics with game stats) |
+| **Phase 6** | Week 6-7 | AI service setup, Gemini integration, game advisor agent |
+| **Phase 7** | Week 7-8 | Agentic chatbot development, game-specific AI features |
+| **Phase 8** | Week 8-9 | Optional AI features (dynamic challenges, achievement hints, trends) |
+| **Phase 9** | Week 9-10 | Integration testing, game balance testing, performance optimization |
+| **Phase 10** | Week 10-11 | Deployment, documentation, gameplay guidelines |
+| **Phase 11** | Week 11+ | Launch, monitoring, iterative balance adjustments |
 
 ---
 
@@ -1040,15 +1179,73 @@ Unit Tests → Component-level tests (Vitest)
 Integration Tests → API integration (React Testing Library)
 E2E Tests → User workflows (Cypress/Playwright)
 Accessibility Tests → WCAG compliance (axe-core)
+Game Testing → XP calculations, achievement logic, leaderboards
+```
+
+**Game-Specific Tests**:
+```javascript
+// XP Calculation Tests
+- Award XP for issue submission
+- Apply quality multipliers correctly
+- Handle streak bonuses
+- Level-up triggers new achievements
+
+// Achievement Tests
+- Unlock conditions evaluated correctly
+- Only unlock once per achievement
+- Progress tracked accurately
+- Display in correct order
+
+// Leaderboard Tests
+- Rankings calculated correctly
+- Ties handled properly
+- Real-time updates (if applicable)
+- Historical records maintained
+
+// Challenge Tests
+- Completion detection accurate
+- Progress calculations correct
+- Bonus rewards awarded properly
+- Time windows respected
 ```
 
 ### 12.2 Backend Testing
 ```
 Unit Tests → Service logic (Jest)
 Integration Tests → GraphQL resolvers (Apollo Server testing)
-Database Tests → Mongoose models
+Database Tests → Mongoose models, game collections
 API Tests → REST/GraphQL endpoints
 Performance Tests → Load testing (k6, Artillery)
+Game Balance Tests → XP economy, progression curves, exploit detection
+```
+
+**Game Balance Testing**:
+```javascript
+// Economy Tests
+- XP distribution fairness (compare player types)
+- Level progression pacing (time to level-up)
+- Achievement difficulty distribution
+- Challenge reward appropriateness
+
+// Exploit Detection
+- Multiple XP award prevention
+- Quality threshold enforcement
+- Bot/fake report detection
+- Streaking abuse prevention
+
+// Data Integrity
+- XP transaction logging accuracy
+- Leaderboard consistency
+- Achievement unlock atomicity
+- Level-up state transitions
+```
+
+### 12.3 User Acceptance Testing (UAT)
+```
+Beta Testing → Select player cohort tests game progression
+Balance Testing → Verify XP economy, challenge difficulty
+Engagement Testing → Monitor retention, daily active users
+Competitive Testing → Leaderboard fairness, no exploits detected
 ```
 
 ---
@@ -1067,23 +1264,212 @@ Performance Tests → Load testing (k6, Artillery)
 
 | Risk | Mitigation |
 |------|-----------|
-| Gemini API rate limits | Implement caching, queue management |
-| Data privacy concerns | GDPR compliance, encrypted storage |
-| Scalability issues | Horizontal scaling, load balancing |
-| Integration complexity | Comprehensive testing, documentation |
-| AI accuracy issues | Human review process, feedback loops |
+| Gemini API rate limits | Implement caching, queue management, fallback responses |
+| Game economy imbalance | Continuous monitoring, rapid iteration cycles, player feedback |
+| XP inflation over time | Built-in decay mechanisms, seasonal reset options |
+| Exploitation/cheating | Transaction logging, anomaly detection, review processes |
+| Low engagement/retention | A/B testing challenges, dynamic difficulty, personalization |
+| Data privacy concerns | GDPR compliance, encrypted storage, anonymization |
+| Scalability issues | Horizontal scaling, load balancing, database sharding |
+| Integration complexity | Comprehensive testing, documentation, modular design |
+| AI accuracy issues | Human review process, feedback loops, fallback strategies |
+| Leaderboard staleness | Regular recalculation jobs, cache invalidation, real-time updates for active tier |
 
 ---
 
 ## 15. Future Enhancements
 
-- **Mobile Apps**: React Native for iOS/Android
-- **Real-time Collaboration**: WebSockets for live updates
-- **Advanced Analytics**: ML models for predictive analysis
+- **Mobile Apps**: React Native for iOS/Android with offline game progress
+- **Real-time Collaboration**: WebSockets for live leaderboard updates
+- **Advanced Analytics**: ML models for predictive player engagement
 - **Multi-language Support**: i18n for international users
+- **Social Features**: Teams, guilds, co-op challenges, tournaments
+- **Seasonal Events**: Limited-time challenges, exclusive rewards, story-driven campaigns
 - **Integration with City Systems**: API connections to existing city databases
-- **Volunteer Management**: Full volunteer coordination system
-- **OAuth Integration**: Single sign-on with municipal systems
+- **Volunteer Management**: Full volunteer coordination with team-based achievements
+- **Marketplace**: Cosmetic rewards, special titles, profile customizations
+- **Streaming Integration**: Support for twitch/youtube streaming of challenges
+- **Physical World Integration**: Location-based challenges, AR elements
+- **Cross-platform Progression**: Sync progress across web and mobile
+
+---
+
+## 16. Game Mechanics Deep Dive
+
+### 16.1 Progression System
+
+**Level Design Goals**:
+- **Early Game (Levels 1-10)**: Quick progression, encourages first-time behaviors
+- **Mid Game (Levels 11-30)**: Steady challenge, introduces specialization
+- **Late Game (Levels 31-50)**: Mastery phase, diminishing XP returns by design
+- **Prestige (Level 50+)**: Optional: reset with multipliers or seasonal ranks
+
+**Progression Pacing**:
+```
+Level    XP Required    Est. Time        Key Milestone
+────────────────────────────────────────────────────────
+1        0              0 days           Welcome
+5        500            1 week           Contributor
+10       1000           2-3 weeks        Community Member
+20       2000           1-2 months       Advocate
+30       3000           2-3 months       Champion
+40       4000           4-6 months       Legend
+50       5000           6-12 months      Master Citizen
+```
+
+### 16.2 Engagement Loops
+
+**Daily Loop**:
+```
+Log In → View Daily Challenge → Complete Activity → Earn XP 
+→ Check Leaderboard → Logout
+
+Reward Triggers:
+- First login of day: +5 bonus XP
+- Complete daily challenge: +25-50 XP
+- Daily streak milestone: +streak_bonus
+```
+
+**Weekly Loop**:
+```
+Check Weekly Challenge → Accumulate Progress → Reach Milestone 
+→ Unlock Weekly Reward → New Challenge Arrives
+
+Reward Triggers:
+- Weekly challenge complete: +50-100 XP
+- Weekly top contributor: +200 XP
+- First week with 4+ daily logins: Consistency badge
+```
+
+**Monthly Loop**:
+```
+Seasonal Achievement Progress → Leaderboard Race 
+→ Monthly Reset → Recognition → Prestige Options
+
+Reward Triggers:
+- Top 10 leaderboard finish: +500 XP + exclusive badge
+- Monthly challenge set complete: +250 XP
+- Seasonal event participation: Themed rewards
+```
+
+### 16.3 Player Segments & Motivations
+
+```
+Casual Players (30% population):
+├─ Motivation: Help community, occasional engagement
+├─ Challenges: Easy, low-frequency
+├─ Progression: Slower, more milestone-focused
+└─ Retention: Monthly events, alt-play options
+
+Core Players (50% population):
+├─ Motivation: Competition, mastery, progression
+├─ Challenges: Medium difficulty, varied types
+├─ Progression: Steady, predictable
+└─ Retention: Leaderboards, seasonal resets, new content
+
+Hardcore Players (20% population):
+├─ Motivation: Dominance, speedrunning, perfection
+├─ Challenges: Hard/Epic, intricate mechanics
+├─ Progression: Fast-paced, optimization-driven
+└─ Retention: Leaderboard competition, content speed
+```
+
+### 16.4 Balancing Knobs (Tunable Parameters)
+
+```javascript
+GAME_CONFIG = {
+  // XP Multipliers
+  BASE_ISSUE_XP: 10,
+  QUALITY_MULTIPLIER_MIN: 1.0,
+  QUALITY_MULTIPLIER_MAX: 2.0,
+  HELPFUL_VOTE_XP: 1,
+  HELPFUL_VOTE_CAP_PER_POST: 10,
+  
+  // Levels
+  XP_PER_LEVEL: 100,
+  MAX_LEVEL: 50,
+  
+  // Streaks
+  STREAK_BONUS_XP_PER_DAY: 5,
+  STREAK_EXPIRY_HOURS: 48,
+  
+  // Challenges
+  EASY_CHALLENGE_XP: 25,
+  MEDIUM_CHALLENGE_XP: 50,
+  HARD_CHALLENGE_XP: 100,
+  EPIC_CHALLENGE_XP: 200,
+  
+  // Achievements
+  ACHIEVEMENT_UNLOCK_BONUS: 0, // already included in XP source
+  
+  // Leaderboard
+  LEADERBOARD_UPDATE_FREQUENCY: 'hourly',
+  LEADERBOARD_DISPLAY_TOP: 100,
+  
+  // Anti-Gaming Measures
+  DAILY_MAX_XP: 500, // prevent grinding
+  MIN_REPORT_QUALITY_FOR_BONUS: 70, // quality threshold
+  UPVOTE_WEIGHT_BY_LEVEL: { /* multiplier by reporter level */ }
+}
+```
+
+### 16.5 Achievement Design Principles
+
+**Achievement Categories**:
+```
+Civic Actions (Community Goals):
+└─ Focus on civic contribution quantity and quality
+   - "Report 1, 5, 10, 50 issues"
+   - "Help resolve 1, 5, 10 issues"
+   - "Write helpful comments on 10 different issues"
+
+Community (Social Goals):
+└─ Focus on reputation and influence
+   - "Receive 10, 50, 100 helpful votes"
+   - "Reach 10K leaderboard ranking"
+   - "Get featured comment 5 times"
+
+Consistency (Behavioral Goals):
+└─ Focus on regular engagement
+   - "3, 7, 14-day streaks"
+   - "Log in 30 days this month"
+   - "Monthly top contributor (Top 50)"
+
+Quality (Excellence Goals):
+└─ Focus on quality contributions
+   - "High-rated issues average 85%+"
+   - "Popular achievement badge"
+   - "Expert in category (100+ issues in one category)"
+
+Special (Limited-Time Goals):
+└─ Focus on engagement and events
+   - "Seasonal achievement"
+   - "Accessibility Month hero"
+   - "Tournament winner"
+```
+
+**Achievement Balancing**:
+```
+Common (40% of population):
+├─ Easily achievable (70%+ will unlock)
+├─ Early progression (first 5 levels)
+└─ Example: "First Issue Reporter" (unlock at first issue)
+
+Uncommon (25% of population):
+├─ Challenging but attainable (25-50% will unlock)
+├─ Mid progression (levels 10-25)
+└─ Example: "Civic Advocate" (50 helpful votes)
+
+Rare (10% of population):
+├─ Difficult to achieve (5-10% will unlock)
+├─ Late progression (levels 25-40)
+└─ Example: "30-Day Streak Master"
+
+Legendary (<5% of population):
+├─ Very challenging (< 5% will unlock)
+├─ End-game progression (levels 40+)
+└─ Example: "Accessibility Champion" (100+ accessibility issues)
+```
 
 ---
 
@@ -1099,25 +1485,122 @@ mutation LoginUser {
       name
       role
       email
+      gameProfileId
     }
   }
 }
 ```
 
-### Engagement Service Query
+### Gamification Service Queries
 ```graphql
-query GetIssuesWithAI {
+# Get player profile with game stats
+query GetPlayerProfile($userId: ID!) {
+  gameProfile(userId: $userId) {
+    totalXP
+    currentLevel
+    currentXPInLevel
+    title
+    unlockedAchievements {
+      id
+      name
+      badge
+      unlockedDate
+    }
+    currentStreak
+    leaderboardRank
+    gameStats {
+      favoriteCategory
+      engagementScore
+      trustScore
+    }
+  }
+}
+
+# Get leaderboard
+query GetLeaderboard($timeRange: String!, $limit: Int) {
+  leaderboard(timeRange: $timeRange, limit: $limit) {
+    rankings {
+      rank
+      userId
+      username
+      xp
+      level
+    }
+  }
+}
+
+# Get active challenges for user
+query GetActiveChallenges($userId: ID!) {
+  activeChallenges(userId: $userId) {
+    id
+    title
+    description
+    difficulty
+    xpReward
+    progressMetric {
+      current
+      target
+    }
+    timeRemaining
+  }
+}
+```
+
+### Gamification Service Mutations
+```graphql
+# Award XP for action
+mutation AwardXP($userId: ID!, $amount: Int!, $source: String!) {
+  awardXP(userId: $userId, amount: $amount, source: $source) {
+    newTotalXP
+    leveledUp
+    newLevel
+    newUnlockedAchievements {
+      id
+      name
+      badge
+    }
+  }
+}
+
+# Complete challenge
+mutation CompleteChallenge($userId: ID!, $challengeId: ID!) {
+  completeChallenge(userId: $userId, challengeId: $challengeId) {
+    success
+    xpAwarded
+    newAchievements {
+      id
+      name
+    }
+    challengeReward
+  }
+}
+```
+
+### Engagement Service with Gamification
+```graphql
+query GetIssuesWithGameData {
   issues(category: "accessibility", status: "open") {
     id
     title
     description
     aiClassification
+    reportQualityScore
     sentiment {
       score
       label
     }
-    comments {
+    reportedBy {
+      id
+      name
+      gameProfile {
+        currentLevel
+        title
+      }
+    }
+    comments(limit: 5) {
       content
+      authorId
+      helpfulVotes
       sentiment {
         score
       }
@@ -1126,13 +1609,50 @@ query GetIssuesWithAI {
 }
 ```
 
-### AI Chatbot Request
-```json
-{
-  "message": "What accessibility issues are open in downtown?",
-  "context": {
-    "userId": "user123",
-    "location": "downtown"
+### AI Service - Game Advisor
+```graphql
+query GetGameAdvice($userId: ID!) {
+  gameAdvice(userId: $userId) {
+    progressStatus
+    recommendedChallenges {
+      id
+      title
+      reasonForRecommendation
+    }
+    achievementHints {
+      achievementId
+      hint
+      progressToward
+    }
+    leaderboardInsight {
+      currentRank
+      pointsToNextRank
+      estimatedTimeToNextLevel
+    }
+    personalizedTips
+  }
+}
+```
+
+### AI Service - Civic Chatbot (Game-Aware)
+```graphql
+query ChatBot($message: String!, $userId: ID!) {
+  chatBot(message: $message, userId: $userId) {
+    response
+    gameContext {
+      relevantChallenges {
+        id
+        title
+      }
+      potentialAchievements {
+        id
+        name
+      }
+    }
+    sources {
+      issueReferences
+      trendData
+    }
   }
 }
 ```
@@ -1152,8 +1672,21 @@ BCRYPT_ROUNDS=10
 ENGAGEMENT_SERVICE_PORT=4002
 ISSUE_ATTACHMENT_MAX_SIZE=10000000
 
+# Gamification Service
+GAMIFICATION_SERVICE_PORT=4003
+BASE_ISSUE_XP=10
+QUALITY_MULTIPLIER_MIN=1.0
+QUALITY_MULTIPLIER_MAX=2.0
+HELPFUL_VOTE_XP=1
+XP_PER_LEVEL=100
+MAX_LEVEL=50
+DAILY_MAX_XP=500
+STREAK_BONUS_XP=5
+STREAK_EXPIRY_HOURS=48
+LEADERBOARD_UPDATE_FREQUENCY=hourly
+
 # AI Service
-AI_SERVICE_PORT=4003
+AI_SERVICE_PORT=4004
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-1.5-pro
 LANGRAPH_TIMEOUT=60
@@ -1167,6 +1700,13 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:5174,http://localhost:5175
 CORS_CREDENTIALS=true
 NODE_ENV=development
 LOG_LEVEL=debug
+
+# Game Configuration
+GAME_SEASON_START=2025-01-01
+GAME_SEASON_LENGTH_DAYS=90
+ENABLE_SEASONAL_RESET=true
+ENABLE_LEADERBOARD_TIERS=true
+ACHIEVEMENT_RARITY_DISTRIBUTION=0.4,0.25,0.1,0.05 # common,uncommon,rare,legendary
 ```
 
 ---
