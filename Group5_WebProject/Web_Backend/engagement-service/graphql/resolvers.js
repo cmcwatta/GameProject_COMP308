@@ -1,6 +1,5 @@
 import Comment from '../models/Comment.js';
 import Issue from '../models/Issue.js';
-import User from '../../auth-service/models/User.js';
 
 const resolvers = {
 	Query: {

@@ -1,0 +1,222 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: gamification_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: mongodb_password
+      MONGO_INITDB_DATABASE: gamification_db
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gamification_network
+
+  # Authentication Service
+  auth-service:
+    build:
+      context: ./Web_Backend/auth-service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/auth_db?authSource=admin
+      JWT_SECRET: your_jwt_secret_key_here
+      JWT_EXPIRE: 7d
+      GRAPHQL_PORT: 4001
+      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
+      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
+      AI_SERVICE_URL: http://ai-service:5004
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - gamification_network
+    healthcheck:
+      test: curl --fail http://localhost:5001/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Engagement Service (Issues & Comments)
+  engagement-service:
+    build:
+      context: ./Web_Backend/engagement-service
+      dockerfile: Dockerfile
+    container_name: engagement_service
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: development
+      PORT: 5002
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/engagement_db?authSource=admin
+      GRAPHQL_PORT: 4002
+      AUTH_SERVICE_URL: http://auth-service:5001
+      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
+      AI_SERVICE_URL: http://ai-service:5004
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - gamification_network
+    healthcheck:
+      test: curl --fail http://localhost:5002/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Gamification Service
+  gamification-service:
+    build:
+      context: ./Web_Backend/gamification-service
+      dockerfile: Dockerfile
+    container_name: gamification_service
+    ports:
+      - "5003:5003"
+    environment:
+      NODE_ENV: development
+      PORT: 5003
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/gamification_db?authSource=admin
+      GRAPHQL_PORT: 4003
+      AUTH_SERVICE_URL: http://auth-service:5001
+      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
+      AI_SERVICE_URL: http://ai-service:5004
+      # Game Configuration
+      GAME_BASE_ISSUE_XP: 10
+      GAME_DAILY_XP_LIMIT: 500
+      GAME_LEVEL_CAP: 50
+      GAME_STREAK_EXPIRY_HOURS: 48
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - gamification_network
+    healthcheck:
+      test: curl --fail http://localhost:5003/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Service (Game Advisor & Civic Chatbot)
+  ai-service:
+    build:
+      context: ./Web_Backend/ai-service
+      dockerfile: Dockerfile
+    container_name: ai_service
+    ports:
+      - "5004:5004"
+    environment:
+      NODE_ENV: development
+      PORT: 5004
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/ai_db?authSource=admin
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      AUTH_SERVICE_URL: http://auth-service:5001
+      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
+      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - gamification_network
+    healthcheck:
+      test: curl --fail http://localhost:5004/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Authentication Frontend
+  auth-frontend:
+    build:
+      context: ./Web_Frontend/auth_frontend
+      dockerfile: Dockerfile
+    container_name: auth_frontend
+    ports:
+      - "3001:5173"
+    environment:
+      VITE_API_URL: http://localhost:5001
+      VITE_GRAPHQL_ENDPOINT: http://localhost:4001/graphql
+      VITE_AUTH_SERVICE: http://localhost:5001
+      VITE_ENGAGEMENT_SERVICE: http://localhost:5002
+      VITE_GAMIFICATION_SERVICE: http://localhost:5003
+      VITE_AI_SERVICE: http://localhost:5004
+    depends_on:
+      - auth-service
+      - gamification-service
+    networks:
+      - gamification_network
+
+  # Analytics Frontend
+  analytics-frontend:
+    build:
+      context: ./Web_Frontend/analytics_frontend
+      dockerfile: Dockerfile
+    container_name: analytics_frontend
+    ports:
+      - "3002:5173"
+    environment:
+      VITE_API_URL: http://localhost:5003
+      VITE_GRAPHQL_ENDPOINT: http://localhost:4003/graphql
+    depends_on:
+      - gamification-service
+    networks:
+      - gamification_network
+
+  # Issue Tracking Frontend
+  issue-frontend:
+    build:
+      context: ./Web_Frontend/issue_frontend
+      dockerfile: Dockerfile
+    container_name: issue_frontend
+    ports:
+      - "3003:5173"
+    environment:
+      VITE_API_URL: http://localhost:5002
+      VITE_GRAPHQL_ENDPOINT: http://localhost:4002/graphql
+    depends_on:
+      - engagement-service
+    networks:
+      - gamification_network
+
+  # API Gateway / Reverse Proxy (Optional - for easier service discovery)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: api_gateway
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - auth-service
+  #     - engagement-service
+  #     - gamification-service
+  #     - ai-service
+  #   networks:
+  #     - gamification_network
+  #   healthcheck:
+  #     test: curl --fail http://localhost/health || exit 1
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+volumes:
+  mongo_data:
+    driver: local
+  mongo_config:
+    driver: local
+
+networks:
+  gamification_network:
+    driver: bridge

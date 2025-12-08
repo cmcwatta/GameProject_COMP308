@@ -26,7 +26,7 @@ const typeDef = gql`
         register(username: String!, email: String!, password: String!): AuthPayload!
         login(username: String!, password: String!): AuthPayload!
         signin(email: String!, password: String!): AuthPayload
-        signup(username: String!, email: String!, password: String!): AuthPayload
+        signup(username: String!, email: String!, password: String!, role: String): AuthPayload
     }
 
 `;
