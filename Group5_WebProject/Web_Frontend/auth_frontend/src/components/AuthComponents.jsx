@@ -51,7 +51,7 @@ const AuthComponents = () => {
         `;
 
       const response = await axios.post(
-        'http://localhost:5001/graphql',
+        'http://localhost:4001/graphql',
         { query: mutation },
         { withCredentials: true }
       );

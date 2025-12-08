@@ -1,6 +1,9 @@
 # Use Node.js 20 as base image
 FROM node:20-alpine
 
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 
@@ -14,11 +17,11 @@ RUN npm install --only=production
 COPY . .
 
 # Expose port
-EXPOSE 5004
+EXPOSE 4003
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5004/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:4003/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Start application
 CMD ["node", "index.js"]

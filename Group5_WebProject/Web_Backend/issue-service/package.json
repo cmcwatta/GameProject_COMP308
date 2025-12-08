@@ -1,12 +1,12 @@
 {
-  "name": "engagement-service",
+  "name": "issue-service",
   "version": "1.0.0",
-  "description": "Civic engagement microservice: issue reporting, staff management, volunteer coordination",
-  "main": "engagement-microservice.js",
+  "description": "Civic issue reporting microservice: issue tracking, comments, notifications",
+  "main": "issue-microservice.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon engagement-microservice.js",
-    "start": "node engagement-microservice.js",
+    "dev": "nodemon issue-microservice.js",
+    "start": "node issue-microservice.js",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

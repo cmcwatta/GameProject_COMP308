@@ -293,20 +293,6 @@ connectDB().then(() => {
 
 export default app;
 
-// MongoDB Connection
-const connectDB = async () => {
-  try {
-    await mongoose.connect(config.mongodbUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✓ AI Service: MongoDB connected');
-  } catch (error) {
-    console.error('✗ AI Service: MongoDB connection failed', error);
-    process.exit(1);
-  }
-};
-
 // ============================================================================
 // HEALTH CHECK ENDPOINTS
 // ============================================================================
@@ -751,27 +737,3 @@ app.use((req, res) => {
     path: req.path,
   });
 });
-
-// Start server
-const PORT = process.env.PORT || 5004;
-
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`
-╔════════════════════════════════════════╗
-║    AI SERVICE STARTED SUCCESSFULLY     ║
-╠════════════════════════════════════════╣
-║ Port: ${PORT}                             ║
-║ Game Advisor: Ready                    ║
-║ Civic Chatbot: Ready                   ║
-║ Gemini Model: ${config.geminiModel}    ║
-╚════════════════════════════════════════╝
-    ╠════════════════════════════════════════╣
-║ Gamification Service: ${config.gamificationServiceURL}
-║ Engagement Service: ${config.engagementServiceURL}
-║ Auth Service: ${config.authServiceURL}
-╚════════════════════════════════════════╝`);
-  });
-});
-
-export default app;

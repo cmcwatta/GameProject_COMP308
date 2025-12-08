@@ -27,15 +27,15 @@ services:
       dockerfile: Dockerfile
     container_name: auth_service
     ports:
-      - "5001:5001"
+      - "4001:4001"
     environment:
       NODE_ENV: development
-      PORT: 5001
+      PORT: 4001
       MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/auth_db?authSource=admin
       JWT_SECRET: your_jwt_secret_key_here
       JWT_EXPIRE: 7d
-      ISSUE_SERVICE_URL: http://issue-service:5002
-      ANALYTICS_SERVICE_URL: http://analytics-service:5003
+      ISSUE_SERVICE_URL: http://issue-service:4002
+      ANALYTICS_SERVICE_URL: http://analytics-service:4003
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
       GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
     depends_on:
@@ -44,7 +44,7 @@ services:
     networks:
       - gamification_network
     healthcheck:
-      test: curl --fail http://localhost:5001/health || exit 1
+      test: curl --fail http://localhost:4001/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,21 +56,21 @@ services:
       dockerfile: Dockerfile
     container_name: issue_service
     ports:
-      - "5002:5002"
+      - "4002:4002"
     environment:
       NODE_ENV: development
-      PORT: 5002
+      PORT: 4002
       MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/issue_db?authSource=admin
       GRAPHQL_PORT: 4002
-      AUTH_SERVICE_URL: http://auth-service:5001
-      ANALYTICS_SERVICE_URL: http://analytics-service:5003
+      AUTH_SERVICE_URL: http://auth-service:4001
+      ANALYTICS_SERVICE_URL: http://analytics-service:4003
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - gamification_network
     healthcheck:
-      test: curl --fail http://localhost:5002/health || exit 1
+      test: curl --fail http://localhost:4002/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -82,21 +82,21 @@ services:
       dockerfile: Dockerfile
     container_name: analytics_service
     ports:
-      - "5003:5003"
+      - "4003:4003"
     environment:
       NODE_ENV: development
-      PORT: 5003
+      PORT: 4003
       MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/analytics_db?authSource=admin
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      AUTH_SERVICE_URL: http://auth-service:5001
-      ISSUE_SERVICE_URL: http://issue-service:5002
+      AUTH_SERVICE_URL: http://auth-service:4001
+      ISSUE_SERVICE_URL: http://issue-service:4002
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - gamification_network
     healthcheck:
-      test: curl --fail http://localhost:5003/health || exit 1
+      test: curl --fail http://localhost:4003/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,10 +112,10 @@ services:
     ports:
       - "3001:5173"
     environment:
-      VITE_API_URL: http://localhost:5001
-      VITE_AUTH_SERVICE: http://localhost:5001
-      VITE_ISSUE_SERVICE: http://localhost:5002
-      VITE_ANALYTICS_SERVICE: http://localhost:5003
+      VITE_API_URL: http://localhost:4001
+      VITE_AUTH_SERVICE: http://localhost:4001
+      VITE_ISSUE_SERVICE: http://localhost:4002
+      VITE_ANALYTICS_SERVICE: http://localhost:4003
     depends_on:
       - auth-service
       - issue-service
@@ -131,8 +131,8 @@ services:
     ports:
       - "3002:5173"
     environment:
-      VITE_API_URL: http://localhost:5003
-      VITE_GRAPHQL_ENDPOINT: http://localhost:5003/graphql
+      VITE_API_URL: http://localhost:4003
+      VITE_GRAPHQL_ENDPOINT: http://localhost:4003/graphql
     depends_on:
       - analytics-service
     networks:
@@ -147,8 +147,8 @@ services:
     ports:
       - "3003:5173"
     environment:
-      VITE_API_URL: http://localhost:5002
-      VITE_GRAPHQL_ENDPOINT: http://localhost:5002/graphql
+      VITE_API_URL: http://localhost:4002
+      VITE_GRAPHQL_ENDPOINT: http://localhost:4002/graphql
     depends_on:
       - issue-service
     networks:

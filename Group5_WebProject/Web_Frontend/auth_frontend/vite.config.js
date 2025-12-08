@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Change port if your backend runs on a different port
+        target: 'http://localhost:4001', // Auth service GraphQL endpoint
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
