@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import IssueDashboard from './components/IssueDashboard';
+import HeatmapView from './components/HeatmapView';
+import ChatbotInterface from './components/ChatbotInterface';
+import SLAMonitor from './components/SLAMonitor';
+import TrendAnalysis from './components/TrendAnalysis';
 
 /**
- * Analytics Frontend App
- * Modern gamification dashboard with real-time metrics
+ * Analytics Frontend - Staff Dashboard
+ * Real-time civic issue management and analytics
  */
 function App() {
-  const [timeRange, setTimeRange] = useState('weekly');
-  const [selectedMetric, setSelectedMetric] = useState('xp');
-  const [dashboardData, setDashboardData] = useState(null);
+  const [activeView, setActiveView] = useState('dashboard');
+  const [timeRange, setTimeRange] = useState('30days');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,293 +22,217 @@ function App() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        
-        // For now, use mock data since backend REST API isn't set up
-        // In production, this would query the GraphQL endpoint
+
+        // Mock data for analytics dashboard
         const mockData = {
-          xpTrend: [
-            { date: '2024-12-01', xp: 150 },
-            { date: '2024-12-02', xp: 250 },
-            { date: '2024-12-03', xp: 180 },
-            { date: '2024-12-04', xp: 320 },
-            { date: '2024-12-05', xp: 290 },
-            { date: '2024-12-06', xp: 410 },
-            { date: '2024-12-07', xp: 350 },
+          summary: {
+            totalIssues: 456,
+            openIssues: 123,
+            resolvedIssues: 289,
+            avgResolutionTime: '3.2 days',
+            slaCompliance: 87,
+          },
+          categoryBreakdown: {
+            'Pothole': 156,
+            'Streetlight': 89,
+            'Flooding': 34,
+            'Safety Hazard': 98,
+            'Accessibility': 45,
+            'Other': 34,
+          },
+          recentActivity: [
+            { id: 1, type: 'Issue Created', title: 'Large pothole on Main St', time: '5 mins ago' },
+            { id: 2, type: 'Status Updated', title: 'Streetlight repaired on Oak Ave', time: '15 mins ago' },
+            { id: 3, type: 'SLA Alert', title: 'Critical: Flooding issue approaching deadline', time: '1 hour ago' },
           ],
-          engagementMetrics: {
-            totalUsers: 12,
-            activeUsers: 8,
-            totalIssuesReported: 45,
-            totalComments: 187,
-            avgSessionTime: '34 mins',
+          staffMetrics: {
+            totalStaff: 12,
+            activeStaff: 8,
+            avgIssuesPerStaff: 9.5,
+            responseTime: '2.1 hours',
           },
-          achievementStats: {
-            totalAchievements: 28,
-            uniqueEarned: 15,
-            averageEarned: 3.2,
+          criticalZones: [
+            { name: 'Downtown District', issueCount: 42 },
+            { name: 'Waterfront Area', issueCount: 28 },
+            { name: 'Industrial Zone', issueCount: 18 },
+          ],
+          atRiskZones: [
+            { name: 'North Bridge', issueCount: 15 },
+            { name: 'East Side', issueCount: 12 },
+          ],
+          overallCompliance: 87,
+          onTrackCount: 267,
+          atRiskCount: 34,
+          overdueCount: 23,
+          byCategoryCompliance: {
+            'Flooding': 95,
+            'Pothole': 81,
+            'Streetlight': 88,
+            'Safety Hazard': 85,
+            'Accessibility': 72,
+            'Other': 80,
           },
-          leaderboardTop: [
-            { rank: 1, username: 'alice_advocate', xp: 2450, level: 8 },
-            { rank: 2, username: 'bob_builder', xp: 1890, level: 7 },
-            { rank: 3, username: 'carol_citizen', xp: 1650, level: 6 },
-          ]
+          byCategorySLA: {
+            'Flooding': '24 hours',
+            'Pothole': '120 hours',
+            'Streetlight': '72 hours',
+            'Safety Hazard': '48 hours',
+            'Accessibility': '96 hours',
+            'Other': '144 hours',
+          },
+          alerts: [
+            { severity: 'critical', message: '8 flooding issues overdue', action: 'Immediate escalation needed' },
+            { severity: 'warning', message: '5 safety issues approaching deadline', action: 'Assign additional staff' },
+            { severity: 'warning', message: '3 accessibility issues overdue', action: 'Schedule follow-up' },
+          ],
+          trend7Day: 12,
+          trend30Day: 5,
+          trend90Day: -8,
+          dailyTrend: [18, 22, 19, 25, 28, 21, 32, 26, 29, 24, 33, 27, 31, 25, 28, 32, 26, 29, 24, 27, 30, 25, 29, 26, 31, 28, 32, 27, 30, 25],
+          categoryTrends: {
+            'Flooding': 8,
+            'Pothole': -3,
+            'Streetlight': 2,
+            'Safety Hazard': 5,
+            'Accessibility': -2,
+            'Other': 1,
+          },
         };
-        
-        setDashboardData(mockData);
+
+        setAnalyticsData(mockData);
+        setLoading(false);
       } catch (err) {
-        setError(err.message);
-      } finally {
+        setError('Failed to load analytics');
         setLoading(false);
       }
     };
 
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, selectedCategory]);
 
-  const renderXPTrend = () => {
-    if (!dashboardData?.xpTrend) return null;
+  const userRole = localStorage.getItem('userRole') || 'Municipal Staff';
+  const isStaff = userRole === 'Municipal Staff';
 
-    const maxXP = Math.max(...dashboardData.xpTrend.map(d => d.xp));
-
+  if (!isStaff) {
     return (
-      <div className="chart-container">
-        <h3>XP Earned Over Time</h3>
-        <div className="chart">
-          {dashboardData.xpTrend.map((day, idx) => (
-            <div key={idx} className="chart-bar-wrapper">
-              <div
-                className="chart-bar"
-                style={{
-                  height: `${(day.xp / maxXP) * 100}%`,
-                  backgroundColor: '#667eea',
-                }}
-                title={`${day.date}: ${day.xp} XP`}
-              ></div>
-              <span className="chart-label">{day.date.slice(5)}</span>
-            </div>
-          ))}
-        </div>
-        <div className="chart-stats">
-          <div className="chart-stat">
-            <span className="stat-label">Total XP</span>
-            <span className="stat-value">
-              {dashboardData.xpTrend.reduce((sum, d) => sum + d.xp, 0).toLocaleString()}
-            </span>
-          </div>
-          <div className="chart-stat">
-            <span className="stat-label">Average/Day</span>
-            <span className="stat-value">
-              {Math.round(
-                dashboardData.xpTrend.reduce((sum, d) => sum + d.xp, 0) / dashboardData.xpTrend.length
-              ).toLocaleString()}
-            </span>
-          </div>
-          <div className="chart-stat">
-            <span className="stat-label">Peak Day</span>
-            <span className="stat-value">
-              {Math.max(...dashboardData.xpTrend.map(d => d.xp)).toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderEngagementMetrics = () => {
-    if (!dashboardData?.engagementMetrics) return null;
-
-    const metrics = dashboardData.engagementMetrics;
-
-    return (
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-header">
-            <h4>📝 Issues Reported</h4>
-            <span className={`metric-trend ${metrics.issuesChange > 0 ? 'up' : 'down'}`}>
-              {metrics.issuesChange > 0 ? '↑' : '↓'} {Math.abs(metrics.issuesChange)}%
-            </span>
-          </div>
-          <p className="metric-value">{metrics.issuesReported}</p>
-          <p className="metric-period">{timeRange}</p>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <h4>💬 Comments Written</h4>
-            <span className={`metric-trend ${metrics.commentsChange > 0 ? 'up' : 'down'}`}>
-              {metrics.commentsChange > 0 ? '↑' : '↓'} {Math.abs(metrics.commentsChange)}%
-            </span>
-          </div>
-          <p className="metric-value">{metrics.commentsWritten}</p>
-          <p className="metric-period">{timeRange}</p>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <h4>👍 Helpful Votes</h4>
-            <span className={`metric-trend ${metrics.votesChange > 0 ? 'up' : 'down'}`}>
-              {metrics.votesChange > 0 ? '↑' : '↓'} {Math.abs(metrics.votesChange)}%
-            </span>
-          </div>
-          <p className="metric-value">{metrics.helpfulVotes}</p>
-          <p className="metric-period">{timeRange}</p>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-header">
-            <h4>🎯 Active Users</h4>
-            <span className={`metric-trend ${metrics.usersChange > 0 ? 'up' : 'down'}`}>
-              {metrics.usersChange > 0 ? '↑' : '↓'} {Math.abs(metrics.usersChange)}%
-            </span>
-          </div>
-          <p className="metric-value">{metrics.activeUsers}</p>
-          <p className="metric-period">{timeRange}</p>
-        </div>
-      </div>
-    );
-  };
-
-  const renderAchievementStats = () => {
-    if (!dashboardData?.achievements) return null;
-
-    const total = dashboardData.achievements.length;
-    const unlocked = dashboardData.achievements.filter(a => a.isUnlocked).length;
-    const percentage = Math.round((unlocked / total) * 100);
-
-    return (
-      <div className="achievement-stats">
-        <h3>Achievement Unlock Rate</h3>
-        <div className="unlock-progress">
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${percentage}%` }}
-            ></div>
-          </div>
-          <div className="progress-text">
-            <span>{unlocked} unlocked</span>
-            <span>/</span>
-            <span>{total} total</span>
-            <span>·</span>
-            <span>{percentage}%</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderLeaderboard = () => {
-    if (!dashboardData?.leaderboard) return null;
-
-    return (
-      <div className="leaderboard-section">
-        <h3>🏆 Top Players</h3>
-        <table className="leaderboard-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Player</th>
-              <th>Level</th>
-              <th>XP</th>
-              <th>Tier</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboardData.leaderboard.slice(0, 10).map((player, idx) => (
-              <tr key={player.userId}>
-                <td className="rank">#{idx + 1}</td>
-                <td className="player">{player.username}</td>
-                <td className="level">{player.currentLevel}</td>
-                <td className="xp">{player.totalXP.toLocaleString()}</td>
-                <td className="tier">{player.tier}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="app-container loading">
-        <div className="loading-spinner">
-          <h2>📊 Loading Analytics Dashboard...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="app-container error">
-        <div className="error-message">
-          <h2>⚠️ Error Loading Dashboard</h2>
-          <p>{error}</p>
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-green-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Staff Only</h1>
+          <p className="text-gray-600 mb-6">
+            The analytics dashboard is only available to municipal staff members.
+          </p>
+          <a
+            href="/issues"
+            className="inline-block px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
+          >
+            Back to Issues
+          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-content">
-          <h1>🎮 Gamification Analytics</h1>
-          <p>Track engagement, achievements, and community growth</p>
-        </div>
-
-        <div className="header-controls">
-          <div className="control-group">
-            <label>Time Range:</label>
-            <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="all-time">All Time</option>
-            </select>
-          </div>
-
-          <div className="control-group">
-            <label>Metric:</label>
-            <select value={selectedMetric} onChange={(e) => setSelectedMetric(e.target.value)}>
-              <option value="xp">XP Trends</option>
-              <option value="engagement">Engagement</option>
-              <option value="achievements">Achievements</option>
-              <option value="leaderboard">Leaderboard</option>
-            </select>
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-green-50">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">📊</div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                Staff Analytics
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none text-sm"
+              >
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
+                <option value="alltime">All Time</option>
+              </select>
+              <div className="text-sm text-gray-600">
+                👤 {userRole}
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="app-main">
-        {(selectedMetric === 'xp' || selectedMetric === 'all') && (
-          <section className="dashboard-section">
-            {renderXPTrend()}
-          </section>
+      {/* Navigation Tabs */}
+      <div className="bg-white/40 backdrop-blur-sm border-b border-white/80 sticky top-16 z-30">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto">
+            {[
+              { id: 'dashboard', label: '📈 Dashboard', icon: 'dashboard' },
+              { id: 'heatmap', label: '🗺️ Heatmap', icon: 'map' },
+              { id: 'sla', label: '⏰ SLA Monitor', icon: 'clock' },
+              { id: 'trends', label: '📉 Trends', icon: 'chart' },
+              { id: 'chatbot', label: '🤖 AI Insights', icon: 'ai' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveView(tab.id)}
+                className={`px-4 py-3 font-medium whitespace-nowrap transition border-b-2 ${
+                  activeView === tab.id
+                    ? 'border-cyan-600 text-cyan-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
+            {error}
+          </div>
         )}
 
-        {(selectedMetric === 'engagement' || selectedMetric === 'all') && (
-          <section className="dashboard-section">
-            {renderEngagementMetrics()}
-          </section>
-        )}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="text-gray-500">Loading analytics...</div>
+          </div>
+        ) : (
+          <>
+            {activeView === 'dashboard' && analyticsData && (
+              <IssueDashboard data={analyticsData} />
+            )}
 
-        {(selectedMetric === 'achievements' || selectedMetric === 'all') && (
-          <section className="dashboard-section">
-            {renderAchievementStats()}
-          </section>
-        )}
+            {activeView === 'heatmap' && analyticsData && (
+              <HeatmapView data={analyticsData} selectedCategory={selectedCategory} />
+            )}
 
-        {(selectedMetric === 'leaderboard' || selectedMetric === 'all') && (
-          <section className="dashboard-section">
-            {renderLeaderboard()}
-          </section>
+            {activeView === 'sla' && analyticsData && (
+              <SLAMonitor data={analyticsData} />
+            )}
+
+            {activeView === 'trends' && analyticsData && (
+              <TrendAnalysis data={analyticsData} timeRange={timeRange} />
+            )}
+
+            {activeView === 'chatbot' && analyticsData && (
+              <ChatbotInterface data={analyticsData} />
+            )}
+          </>
         )}
       </main>
 
-      <footer className="app-footer">
-        <p>Last updated: {new Date().toLocaleString()}</p>
+      {/* Footer */}
+      <footer className="bg-white/40 backdrop-blur-sm border-t border-gray-200/50 mt-20">
+        <div className="max-w-7xl mx-auto px-4 py-8 text-center text-sm text-gray-600">
+          <p>Staff Dashboard • Real-time civic issue management and analytics</p>
+        </div>
       </footer>
     </div>
   );

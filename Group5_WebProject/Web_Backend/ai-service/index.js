@@ -2,7 +2,9 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import config from './config/config.js';
-import GameAdvisor from './agents/gameAdvisor.js';
+import CivicChatbot from './agents/civicChatbot.js';
+import { TrendDetector } from './agents/trendDetector.js';
+import { IssueClassifier } from './agents/issueClassifier.js';
 
 dotenv.config();
 
@@ -10,8 +12,286 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize GameAdvisor
-const gameAdvisor = new GameAdvisor();
+// Initialize Agents
+const civicChatbot = new CivicChatbot();
+const trendDetector = new TrendDetector();
+const issueClassifier = new IssueClassifier();
+
+// MongoDB Connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(config.mongodbUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('✓ Analytics Service: MongoDB connected');
+  } catch (error) {
+    console.error('✗ Analytics Service: MongoDB connection failed', error);
+    process.exit(1);
+  }
+};
+
+// ============================================================================
+// HEALTH CHECK ENDPOINTS
+// ============================================================================
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'analytics-service',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ============================================================================
+// CIVIC CHATBOT ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/chatbot/query
+ * General civic information and accessibility guidance
+ */
+app.post('/api/chatbot/query', async (req, res) => {
+  try {
+    const { query, userId, context } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+
+    const response = await civicChatbot.handleQuery(query, userId, context);
+
+    res.json({
+      query,
+      answer: response,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error processing chatbot query:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/chatbot/flooding-assistance
+ * Specialized flooding emergency guidance
+ */
+app.post('/api/chatbot/flooding-assistance', async (req, res) => {
+  try {
+    const { userLocation, emergencyLevel, context } = req.body;
+
+    const guidance = await civicChatbot.getFloodingGuidance(userLocation, emergencyLevel, context);
+
+    res.json({
+      guidance,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error getting flooding guidance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// ISSUE CLASSIFICATION ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/classify/issue
+ * AI-powered issue classification and categorization
+ */
+app.post('/api/classify/issue', async (req, res) => {
+  try {
+    const { title, description } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    const classification = await issueClassifier.classifyIssue(title, description);
+
+    res.json({
+      classification,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error classifying issue:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/classify/sentiment
+ * Analyze sentiment of civic content
+ */
+app.post('/api/classify/sentiment', async (req, res) => {
+  try {
+    const { text, issueId } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const sentiment = await issueClassifier.analyzeSentiment(text);
+
+    res.json({
+      sentiment,
+      issueId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error analyzing sentiment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/classify/summarize
+ * Generate AI summary of issue details
+ */
+app.post('/api/classify/summarize', async (req, res) => {
+  try {
+    const { title, description, comments } = req.body;
+
+    if (!description) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+
+    const summary = await issueClassifier.summarizeIssue(title, description, comments);
+
+    res.json({
+      summary,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error summarizing issue:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// TREND DETECTION ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/trends/flooding-hotspots
+ * Detect flooding hotspots and risk areas
+ */
+app.get('/api/trends/flooding-hotspots', async (req, res) => {
+  try {
+    const { radiusKm } = req.query;
+
+    const hotspots = await trendDetector.detectFloodingHotspots(radiusKm || 10);
+
+    res.json({
+      hotspots,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error detecting flooding hotspots:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/trends/issue-patterns
+ * Detect patterns in civic issues
+ */
+app.get('/api/trends/issue-patterns', async (req, res) => {
+  try {
+    const { days } = req.query;
+
+    const patterns = await trendDetector.detectIssuePatterns(days || 30);
+
+    res.json({
+      patterns,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error detecting issue patterns:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/trends/category-distribution
+ * Get distribution of issues by category
+ */
+app.get('/api/trends/category-distribution', async (req, res) => {
+  try {
+    const distribution = await trendDetector.getCategoryDistribution();
+
+    res.json({
+      distribution,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error getting category distribution:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/trends/sla-performance
+ * Analyze SLA compliance and performance
+ */
+app.get('/api/trends/sla-performance', async (req, res) => {
+  try {
+    const { days, category } = req.query;
+
+    const performance = await trendDetector.analyzeSLAPerformance(days || 30, category);
+
+    res.json({
+      performance,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error analyzing SLA performance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// ERROR HANDLING & SERVER STARTUP
+// ============================================================================
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not found',
+    path: req.path,
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 5003;
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`
+╔════════════════════════════════════════╗
+║  ANALYTICS SERVICE STARTED             ║
+╠════════════════════════════════════════╣
+║ Port: ${PORT}                             ║
+║ Civic Chatbot: Ready                   ║
+║ Issue Classifier: Ready                ║
+║ Trend Detector: Ready                  ║
+║ Gemini Model: ${config.geminiModel}    ║
+╚════════════════════════════════════════╝
+    `);
+  });
+});
+
+export default app;
 
 // MongoDB Connection
 const connectDB = async () => {

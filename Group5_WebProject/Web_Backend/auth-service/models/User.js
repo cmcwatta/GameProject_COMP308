@@ -3,42 +3,69 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true
-    },
     email: {
         type: String,
         required: true,
         unique: true
     },
     password: {
+        type: String
+    },
+    name: {
         type: String,
         required: true
     },
     role: {
         type: String,
-        enum: ['Resident', 'Municipal Staff', 'Admin', 'user', 'staff', 'admin'],
+        enum: ['Resident', 'Municipal Staff', 'Community Advocate', 'Admin'],
         default: 'Resident'
     },
-    gameProfileId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'GameProfile',
-        description: 'Reference to user game profile in gamification service'
-    },
+    phone: String,
     avatar: {
         type: String,
         default: null
     },
-    isActive: {
+    location: {
+        address: String,
+        latitude: Number,
+        longitude: Number,
+        city: String,
+        postalCode: String
+    },
+    preferences: {
+        notificationFrequency: {
+            type: String,
+            enum: ['instant', 'daily', 'weekly'],
+            default: 'instant'
+        },
+        categories: [String],
+        radius: { type: Number, default: 5 } // km for alerts
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive', 'suspended'],
+        default: 'active'
+    },
+    emailVerified: {
         type: Boolean,
-        default: true
+        default: false
     },
-    lastLogin: {
-        type: Date,
-        default: null
-    },
+    
+    // OAuth integration
+    oauthProviders: [{
+        provider: { type: String, enum: ['google', 'github'] },
+        externalId: String,
+        email: String
+    }],
+    
+    // Staff-specific fields
+    department: String,
+    staffId: String,
+    
+    // Volunteer-specific fields
+    volunteerSkills: [String],
+    hoursContributed: { type: Number, default: 0 },
+    
     createdAt: {
         type: Date,
         default: Date.now
@@ -46,13 +73,18 @@ const userSchema = new mongoose.Schema({
     updatedAt: {
         type: Date,
         default: Date.now
+    },
+    lastLogin: {
+        type: Date,
+        default: null
     }
 });
 
 // Index for faster lookups
 userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ gameProfileId: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ 'oauthProviders.externalId': 1 });
 
 // Pre-save hook to hash password
 userSchema.pre('save', async function(next) {

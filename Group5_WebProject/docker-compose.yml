@@ -34,10 +34,10 @@ services:
       MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/auth_db?authSource=admin
       JWT_SECRET: your_jwt_secret_key_here
       JWT_EXPIRE: 7d
-      GRAPHQL_PORT: 4001
-      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
-      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
-      AI_SERVICE_URL: http://ai-service:5004
+      ISSUE_SERVICE_URL: http://issue-service:5002
+      ANALYTICS_SERVICE_URL: http://analytics-service:5003
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -49,22 +49,21 @@ services:
       timeout: 10s
       retries: 3
 
-  # Engagement Service (Issues & Comments)
-  engagement-service:
+  # Issue Management Service (Issues, Comments, Alerts)
+  issue-service:
     build:
-      context: ./Web_Backend/engagement-service
+      context: ./Web_Backend/issue-service
       dockerfile: Dockerfile
-    container_name: engagement_service
+    container_name: issue_service
     ports:
       - "5002:5002"
     environment:
       NODE_ENV: development
       PORT: 5002
-      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/engagement_db?authSource=admin
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/issue_db?authSource=admin
       GRAPHQL_PORT: 4002
       AUTH_SERVICE_URL: http://auth-service:5001
-      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
-      AI_SERVICE_URL: http://ai-service:5004
+      ANALYTICS_SERVICE_URL: http://analytics-service:5003
     depends_on:
       mongodb:
         condition: service_healthy
@@ -76,27 +75,21 @@ services:
       timeout: 10s
       retries: 3
 
-  # Gamification Service
-  gamification-service:
+  # Analytics & AI Service (Chatbot, Classification, Trends)
+  analytics-service:
     build:
-      context: ./Web_Backend/gamification-service
+      context: ./Web_Backend/ai-service
       dockerfile: Dockerfile
-    container_name: gamification_service
+    container_name: analytics_service
     ports:
       - "5003:5003"
     environment:
       NODE_ENV: development
       PORT: 5003
-      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/gamification_db?authSource=admin
-      GRAPHQL_PORT: 4003
+      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/analytics_db?authSource=admin
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       AUTH_SERVICE_URL: http://auth-service:5001
-      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
-      AI_SERVICE_URL: http://ai-service:5004
-      # Game Configuration
-      GAME_BASE_ISSUE_XP: 10
-      GAME_DAILY_XP_LIMIT: 500
-      GAME_LEVEL_CAP: 50
-      GAME_STREAK_EXPIRY_HOURS: 48
+      ISSUE_SERVICE_URL: http://issue-service:5002
     depends_on:
       mongodb:
         condition: service_healthy
@@ -108,32 +101,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # AI Service (Game Advisor & Civic Chatbot)
-  ai-service:
-    build:
-      context: ./Web_Backend/ai-service
-      dockerfile: Dockerfile
-    container_name: ai_service
-    ports:
-      - "5004:5004"
-    environment:
-      NODE_ENV: development
-      PORT: 5004
-      MONGODB_URI: mongodb://admin:mongodb_password@mongodb:27017/ai_db?authSource=admin
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      AUTH_SERVICE_URL: http://auth-service:5001
-      ENGAGEMENT_SERVICE_URL: http://engagement-service:5002
-      GAMIFICATION_SERVICE_URL: http://gamification-service:5003
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - gamification_network
-    healthcheck:
-      test: curl --fail http://localhost:5004/health || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
 
   # Authentication Frontend
   auth-frontend:
@@ -145,14 +113,12 @@ services:
       - "3001:5173"
     environment:
       VITE_API_URL: http://localhost:5001
-      VITE_GRAPHQL_ENDPOINT: http://localhost:4001/graphql
       VITE_AUTH_SERVICE: http://localhost:5001
-      VITE_ENGAGEMENT_SERVICE: http://localhost:5002
-      VITE_GAMIFICATION_SERVICE: http://localhost:5003
-      VITE_AI_SERVICE: http://localhost:5004
+      VITE_ISSUE_SERVICE: http://localhost:5002
+      VITE_ANALYTICS_SERVICE: http://localhost:5003
     depends_on:
       - auth-service
-      - gamification-service
+      - issue-service
     networks:
       - gamification_network
 
@@ -166,9 +132,9 @@ services:
       - "3002:5173"
     environment:
       VITE_API_URL: http://localhost:5003
-      VITE_GRAPHQL_ENDPOINT: http://localhost:4003/graphql
+      VITE_GRAPHQL_ENDPOINT: http://localhost:5003/graphql
     depends_on:
-      - gamification-service
+      - analytics-service
     networks:
       - gamification_network
 
@@ -182,9 +148,9 @@ services:
       - "3003:5173"
     environment:
       VITE_API_URL: http://localhost:5002
-      VITE_GRAPHQL_ENDPOINT: http://localhost:4002/graphql
+      VITE_GRAPHQL_ENDPOINT: http://localhost:5002/graphql
     depends_on:
-      - engagement-service
+      - issue-service
     networks:
       - gamification_network
 
@@ -200,9 +166,8 @@ services:
   #     - ./ssl:/etc/nginx/ssl:ro
   #   depends_on:
   #     - auth-service
-  #     - engagement-service
-  #     - gamification-service
-  #     - ai-service
+  #     - issue-service
+  #     - analytics-service
   #   networks:
   #     - gamification_network
   #   healthcheck:

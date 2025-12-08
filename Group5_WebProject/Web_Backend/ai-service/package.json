@@ -1,7 +1,7 @@
 {
-  "name": "ai-service",
-  "version": "1.0.0",
-  "description": "AI integration service: chatbot, game advisor, content generation",
+  "name": "analytics-service",
+  "version": "2.0.0",
+  "description": "Analytics & AI integration service: civic chatbot, issue classification, trend detection, sentiment analysis",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -14,17 +14,22 @@
     "gemini",
     "langgraph",
     "chatbot",
-    "game",
-    "advisor"
+    "civic",
+    "analytics",
+    "issue-tracking",
+    "sentiment-analysis"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.3.0",
+    "@langchain/core": "^0.1.0",
+    "@langchain/google-genai": "^0.0.1",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongoose": "^8.0.0",
+    "socket.io": "^4.7.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
