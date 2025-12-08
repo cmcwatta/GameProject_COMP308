@@ -16,21 +16,39 @@ function App() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/analytics?timeRange=${timeRange}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics data');
-        }
-
-        const data = await response.json();
-        setDashboardData(data);
+        
+        // For now, use mock data since backend REST API isn't set up
+        // In production, this would query the GraphQL endpoint
+        const mockData = {
+          xpTrend: [
+            { date: '2024-12-01', xp: 150 },
+            { date: '2024-12-02', xp: 250 },
+            { date: '2024-12-03', xp: 180 },
+            { date: '2024-12-04', xp: 320 },
+            { date: '2024-12-05', xp: 290 },
+            { date: '2024-12-06', xp: 410 },
+            { date: '2024-12-07', xp: 350 },
+          ],
+          engagementMetrics: {
+            totalUsers: 12,
+            activeUsers: 8,
+            totalIssuesReported: 45,
+            totalComments: 187,
+            avgSessionTime: '34 mins',
+          },
+          achievementStats: {
+            totalAchievements: 28,
+            uniqueEarned: 15,
+            averageEarned: 3.2,
+          },
+          leaderboardTop: [
+            { rank: 1, username: 'alice_advocate', xp: 2450, level: 8 },
+            { rank: 2, username: 'bob_builder', xp: 1890, level: 7 },
+            { rank: 3, username: 'carol_citizen', xp: 1650, level: 6 },
+          ]
+        };
+        
+        setDashboardData(mockData);
       } catch (err) {
         setError(err.message);
       } finally {

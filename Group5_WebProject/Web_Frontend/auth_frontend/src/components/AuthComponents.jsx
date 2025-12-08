@@ -59,7 +59,7 @@ const AuthComponents = () => {
                     setMessage('Sign up successful!');
                 } else {
                     setMessage('Sign in successful!');
-                    window.location.href = 'http://localhost:5174/';
+                    window.location.href = 'http://localhost:3002/';
                 }
             }
         } catch (error) {
