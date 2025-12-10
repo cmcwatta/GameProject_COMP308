@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import './AuthForm.css';
 
-const RegisterForm = () => {
+const RegisterForm = ({ selectedRole }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -15,8 +16,19 @@ const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  // Set role from selectedRole prop when it changes
+  useEffect(() => {
+    if (selectedRole) {
+      setFormData(prev => ({
+        ...prev,
+        role: selectedRole
+      }));
+    }
+  }, [selectedRole]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,20 +36,48 @@ const RegisterForm = () => {
       ...prev,
       [name]: value
     }));
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    
-    // Validate password length
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+    if (!validateForm()) {
       return;
     }
     
@@ -75,21 +115,42 @@ const RegisterForm = () => {
       }
     } catch (error) {
       toast.error('An error occurred during registration');
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const getRoleColor = () => {
+    switch (formData.role) {
+      case 'resident':
+        return '#3b82f6';
+      case 'community_advocate':
+        return '#10b981';
+      case 'municipal_staff':
+        return '#f43f5e';
+      default:
+        return '#667eea';
+    }
+  };
+
+  const getRoleLabel = () => {
+    return formData.role.replace('_', ' ').toUpperCase();
+  };
+
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
-        Create Account
-      </h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-            Username *
+    <div className="register-form-wrapper">
+      <form onSubmit={handleSubmit} className="register-form">
+        {/* Role Badge */}
+        <div className="role-badge" style={{ borderColor: getRoleColor() }}>
+          <span className="role-badge-dot" style={{ backgroundColor: getRoleColor() }}></span>
+          <span className="role-badge-text">{getRoleLabel()}</span>
+        </div>
+
+        {/* Username Field */}
+        <div className="form-group">
+          <label htmlFor="username" className="form-label">
+            Username
           </label>
           <input
             type="text"
@@ -97,16 +158,17 @@ const RegisterForm = () => {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            placeholder="Choose a username"
-            required
+            placeholder="Choose a unique username"
+            className={`form-input ${errors.username ? 'error' : ''}`}
             disabled={isLoading}
           />
+          {errors.username && <p className="form-error">{errors.username}</p>}
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
+        {/* Email Field */}
+        <div className="form-group">
+          <label htmlFor="email" className="form-label">
+            Email Address
           </label>
           <input
             type="email"
@@ -114,137 +176,102 @@ const RegisterForm = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            placeholder="Enter your email"
-            required
+            placeholder="your@email.com"
+            className={`form-input ${errors.email ? 'error' : ''}`}
             disabled={isLoading}
           />
+          {errors.email && <p className="form-error">{errors.email}</p>}
         </div>
 
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-            I am a *
+        {/* Password Field */}
+        <div className="form-group">
+          <label htmlFor="password" className="form-label">
+            Password
           </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            disabled={isLoading}
-          >
-            <option value="resident">Resident</option>
-            <option value="community_advocate">Community Advocate</option>
-            <option value="municipal_staff">Municipal Staff</option>
-            <option value="admin">Administrator</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-            Password *
-          </label>
-          <div className="relative">
+          <div className="password-input-wrapper">
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-12"
-              placeholder="Create a password"
-              required
+              placeholder="Minimum 6 characters"
+              className={`form-input ${errors.password ? 'error' : ''}`}
               disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="password-toggle"
             >
               {showPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
+                <EyeSlashIcon className="icon" />
               ) : (
-                <EyeIcon className="h-5 w-5" />
+                <EyeIcon className="icon" />
               )}
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters long</p>
+          {errors.password && <p className="form-error">{errors.password}</p>}
         </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password *
+        {/* Confirm Password Field */}
+        <div className="form-group">
+          <label htmlFor="confirmPassword" className="form-label">
+            Confirm Password
           </label>
-          <div className="relative">
+          <div className="password-input-wrapper">
             <input
-              type={showConfirmPassword ? "text" : "password"}
+              type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-12"
-              placeholder="Confirm your password"
-              required
+              placeholder="Re-enter your password"
+              className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
               disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="password-toggle"
             >
               {showConfirmPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
+                <EyeSlashIcon className="icon" />
               ) : (
-                <EyeIcon className="h-5 w-5" />
+                <EyeIcon className="icon" />
               )}
             </button>
           </div>
+          {errors.confirmPassword && (
+            <p className="form-error">{errors.confirmPassword}</p>
+          )}
         </div>
 
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="terms"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            required
-          />
-          <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-            I agree to the{' '}
-            <Link to="/terms" className="text-blue-600 hover:text-blue-800">
-              Terms of Service
-            </Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="text-blue-600 hover:text-blue-800">
-              Privacy Policy
-            </Link>
-          </label>
-        </div>
-
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="submit-button"
+          style={{ backgroundColor: getRoleColor() }}
         >
           {isLoading ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <>
+              <span className="spinner"></span>
               Creating Account...
-            </span>
+            </>
           ) : (
-            'Create Account'
+            `Create Account as ${getRoleLabel()}`
           )}
         </button>
 
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-800">
-              Sign in
-            </Link>
-          </p>
+        {/* Password Requirements */}
+        <div className="password-requirements">
+          <p className="requirements-title">Password must contain:</p>
+          <ul className="requirements-list">
+            <li className={formData.password.length >= 6 ? 'met' : ''}>
+              ✓ At least 6 characters
+            </li>
+          </ul>
         </div>
       </form>
     </div>

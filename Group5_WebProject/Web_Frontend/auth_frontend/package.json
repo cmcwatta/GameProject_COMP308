@@ -2,6 +2,7 @@
   "name": "auth-frontend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@apollo/client": "^3.9.0",
     "@headlessui/react": "^1.7.19",

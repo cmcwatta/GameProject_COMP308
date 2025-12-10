@@ -5,14 +5,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { apolloClient } from './services/apiClient';
 
-// Layout Components
-import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
-
 // Pages
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import RoleSelectionPage from './pages/RoleSelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import ProfilePage from './pages/ProfilePage';
@@ -29,13 +23,10 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Header />
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow">
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/" element={<RoleSelectionPage />} />
 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
@@ -73,14 +64,8 @@ function App() {
 
                 {/* Catch-all redirect */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-               {/* <Route path="/report" element={
-                   <ProtectedRoute>
-                     <ReportIssuePage />
-                  </ProtectedRoute>
-                } />*/}
               </Routes>
             </main>
-            <Footer />
             <Toaster position="top-right" />
           </div>
         </Router>
