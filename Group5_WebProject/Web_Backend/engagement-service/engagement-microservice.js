@@ -18,10 +18,17 @@ import { connectDB } from "./config/mongoose.js";
 // Connect to MongoDB
 connectDB();
 const app = express();
-app.use(cors({
+
+// CORS configuration
+const corsOptions = {
   origin: Array.isArray(config.cors.origin) ? config.cors.origin : [config.cors.origin],
   credentials: config.cors.credentials,
-}));
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,10 +59,7 @@ const server = new ApolloServer({
 async function startServer() {
   await server.start();
   
-  app.use("/graphql", cors({
-    origin: Array.isArray(config.cors.origin) ? config.cors.origin : [config.cors.origin, "https://studio.apollographql.com"],
-    credentials: config.cors.credentials,
-  }), expressMiddleware(server, {
+  app.use("/graphql", cors(corsOptions), expressMiddleware(server, {
     context: async ({ req, res }) => {
       // Authentication context
       const token = req.cookies?.token || 

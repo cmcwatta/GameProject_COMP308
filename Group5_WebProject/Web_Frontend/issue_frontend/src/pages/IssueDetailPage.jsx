@@ -497,7 +497,7 @@ const IssueDetailPage = () => {
             <div className="stat-item">
               <span className="stat-label">Days Open</span>
               <span className="stat-value">
-                {issue.createdAt ? Math.floor((new Date() - new Date(issue.createdAt)) / (1000 * 60 * 60 * 24)) : 0}
+                {issue.createdAt && !isNaN(new Date(issue.createdAt)) ? Math.floor((new Date() - new Date(issue.createdAt)) / (1000 * 60 * 60 * 24)) : 0}
               </span>
             </div>
           </div>

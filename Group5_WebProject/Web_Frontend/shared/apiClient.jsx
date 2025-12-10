@@ -42,9 +42,9 @@ const routerLink = new ApolloLink((operation, forward) => {
     def => def.operation === 'mutation'
   );
   
-  const isIssueRelated = operationName?.includes('Issue') || operationName?.includes('GetIssue');
-  const isEngagementRelated = operationName?.includes('Comment') || operationName?.includes('Upvote') || operationName?.includes('Volunteer');
-  const isAIRelated = operationName?.includes('Classify') || operationName?.includes('AI');
+  const isIssueRelated = operationName?.toLowerCase().includes('issue') || operationName?.toLowerCase().includes('getissue');
+  const isEngagementRelated = operationName?.toLowerCase().includes('comment') || operationName?.toLowerCase().includes('upvote') || operationName?.toLowerCase().includes('volunteer');
+  const isAIRelated = operationName?.toLowerCase().includes('classify') || operationName?.toLowerCase().includes('ai');
   
   // Route based on operation name and type
   if (isMutation) {

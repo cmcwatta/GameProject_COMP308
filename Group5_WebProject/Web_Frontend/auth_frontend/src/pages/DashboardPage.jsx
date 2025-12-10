@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { useQuery, gql } from '@apollo/client';
 import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
@@ -13,52 +14,66 @@ import {
 } from '@heroicons/react/24/outline';
 import './DashboardPage.css';
 
+// GraphQL Query to fetch recent issues
+const GET_RECENT_ISSUES = gql`
+  query GetRecentIssues {
+    issues(limit: 10) {
+      id
+      title
+      status
+      priority
+      location {
+        address
+      }
+      createdAt
+      upvotes
+    }
+  }
+`;
+
+const GET_ISSUE_STATS = gql`
+  query GetIssueStats {
+    issues {
+      id
+      status
+      priority
+    }
+  }
+`;
+
 const DashboardPage = () => {
   const { user } = useAuth();
-  const [stats] = useState({
-    totalIssues: 24,
-    resolvedIssues: 15,
-    pendingIssues: 6,
-    highPriority: 3
+  const [stats, setStats] = useState({
+    totalIssues: 0,
+    resolvedIssues: 0,
+    pendingIssues: 0,
+    highPriority: 0
   });
-  const [recentIssues] = useState([
-    {
-      id: 1,
-      title: 'Pothole on Main Street',
-      status: 'in_progress',
-      priority: 'high',
-      location: 'Main St & 5th Ave',
-      submittedDate: '2 hours ago',
-      upvotes: 12
-    },
-    {
-      id: 2,
-      title: 'Street light out',
-      status: 'open',
-      priority: 'medium',
-      location: 'Oak Boulevard',
-      submittedDate: '5 hours ago',
-      upvotes: 8
-    },
-    {
-      id: 3,
-      title: 'Debris cleanup needed',
-      status: 'resolved',
-      priority: 'low',
-      location: 'Park Avenue',
-      submittedDate: '1 day ago',
-      upvotes: 5
-    },
-    {
-      id: 4,
-      title: 'Drainage issue',
-      status: 'in_progress',
-      priority: 'high',
-      location: 'Riverside Drive',
-      submittedDate: '3 days ago',
-      upvotes: 18
+
+  // Fetch recent issues
+  const { data: issuesData, loading: issuesLoading } = useQuery(GET_RECENT_ISSUES);
+  
+  // Fetch stats
+  const { data: statsData } = useQuery(GET_ISSUE_STATS);
+
+  // Calculate stats from data
+  useEffect(() => {
+    if (statsData?.issues) {
+      const issues = statsData.issues;
+      const resolved = issues.filter(i => i.status === 'resolved').length;
+      const pending = issues.filter(i => i.status === 'open' || i.status === 'in_progress').length;
+      const highPriority = issues.filter(i => i.priority === 'critical' || i.priority === 'high').length;
+
+      setStats({
+        totalIssues: issues.length,
+        resolvedIssues: resolved,
+        pendingIssues: pending,
+        highPriority: highPriority
+      });
     }
-  ]);
+  }, [statsData]);
+
+  const recentIssues = issuesData?.issues || [];
 
   const getRoleColor = () => {
     switch (user?.role) {
@@ -98,8 +113,19 @@ const DashboardPage = () => {
     return status.replace('_', ' ').toUpperCase();
   };
 
-  const handleViewIssue = (issueId) => {
-    toast.success(`Opening issue ${issueId}`);
+  const getSubmittedTime = (createdAt) => {
+    const date = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const handleCreateIssue = () => {
@@ -209,51 +235,63 @@ const DashboardPage = () => {
           </div>
 
           <div className="issues-list">
-            {recentIssues.map((issue) => (
-              <div key={issue.id} className="issue-item">
-                <div className="issue-left">
-                  <div
-                    className="issue-status-indicator"
-                    style={{ backgroundColor: getStatusColor(issue.status) }}
-                  ></div>
-                  <div className="issue-info">
-                    <h3 className="issue-title">{issue.title}</h3>
-                    <p className="issue-location">{issue.location}</p>
-                    <div className="issue-meta">
-                      <span className="meta-badge">{issue.submittedDate}</span>
-                      <span className="meta-badge">
-                        <UserGroupIcon className="meta-icon" />
-                        {issue.upvotes} upvotes
-                      </span>
+            {issuesLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                Loading issues...
+              </div>
+            ) : recentIssues.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                No issues found
+              </div>
+            ) : (
+              recentIssues.map((issue) => (
+                <div key={issue.id} className="issue-item">
+                  <div className="issue-left">
+                    <div
+                      className="issue-status-indicator"
+                      style={{ backgroundColor: getStatusColor(issue.status) }}
+                    ></div>
+                    <div className="issue-info">
+                      <h3 className="issue-title">{issue.title}</h3>
+                      <p className="issue-location">{issue.location?.address || 'Location not specified'}</p>
+                      <div className="issue-meta">
+                        <span className="meta-badge">{getSubmittedTime(issue.createdAt)}</span>
+                        <span className="meta-badge">
+                          <UserGroupIcon className="meta-icon" />
+                          {issue.upvotes || 0} upvotes
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="issue-right">
-                  <div
-                    className="status-badge"
-                    style={{
-                      backgroundColor: `${getStatusColor(issue.status)}20`,
-                      color: getStatusColor(issue.status),
-                      borderColor: getStatusColor(issue.status)
-                    }}
-                  >
-                    {getStatusLabel(issue.status)}
+                  <div className="issue-right">
+                    <div
+                      className="status-badge"
+                      style={{
+                        backgroundColor: `${getStatusColor(issue.status)}20`,
+                        color: getStatusColor(issue.status),
+                        borderColor: getStatusColor(issue.status)
+                      }}
+                    >
+                      {getStatusLabel(issue.status)}
+                    </div>
+                    <div
+                      className={`priority-badge priority-${issue.priority}`}
+                    >
+                      {issue.priority.toUpperCase()}
+                    </div>
+                    <button
+                      onClick={() => {
+                        window.location.href = `http://localhost:5174/issues/${issue.id}`;
+                      }}
+                      className="view-button"
+                    >
+                      View →
+                    </button>
                   </div>
-                  <div
-                    className={`priority-badge priority-${issue.priority}`}
-                  >
-                    {issue.priority.toUpperCase()}
-                  </div>
-                  <button
-                    onClick={() => handleViewIssue(issue.id)}
-                    className="view-button"
-                  >
-                    View →
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
