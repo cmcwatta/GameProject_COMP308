@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NotificationCenter from '../notifications/NotificationCenter';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { 
@@ -92,6 +93,9 @@ const Header = () => {
                     Advocate Hub
                   </Link>
                 )}
+
+                {/* Notification Center */}
+                <NotificationCenter />
 
                 {/* User Menu */}
                 <Menu as="div" className="relative">

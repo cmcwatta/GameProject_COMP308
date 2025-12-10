@@ -1,0 +1,295 @@
+```
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                ║
+║                      ✅ ENVIRONMENT CONFIGURATION COMPLETE                     ║
+║                                                                                ║
+║                     Notification Service (Port 4005)                           ║
+║                     Configuration Date: December 10, 2025                      ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 📁 FILES CREATED                                                                │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  ✅ .env                          Active configuration file
+  ✅ .env.example                  Configuration template
+  ✅ verify-config.js              Configuration verification script
+  ✅ SETUP.md                      Quick start guide
+  ✅ CONFIGURATION.md              Detailed configuration guide
+  ✅ ENV_SETUP_COMPLETE.md         This summary
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ⚙️  CONFIGURATION SUMMARY                                                       │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Service Configuration:
+    PORT                      = 4005             (HTTP Server)
+    WS_PORT                   = 8080             (WebSocket)
+    NODE_ENV                  = development      (Mode)
+
+  Database:
+    NOTIFICATION_MONGO_URI    = mongodb://localhost:27017/notification_service_db
+
+  CORS Origins (5 configured):
+    ✓ http://localhost:5173   (Frontend - Vite)
+    ✓ http://localhost:5174   (Analytics)
+    ✓ http://localhost:5175   (Alternate)
+    ✓ http://localhost:3000   (React)
+    ✓ http://localhost:4000   (API Gateway)
+
+  Microservices (4 configured):
+    ✓ Auth Service       = http://localhost:4001/graphql
+    ✓ Issue Service      = http://localhost:4003/graphql
+    ✓ Engagement Service = http://localhost:4004/graphql
+    ✓ AI Service         = http://localhost:4002/graphql
+
+  Security:
+    JWT_SECRET = [Configured with placeholder value]
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 🚀 QUICKSTART (3 COMMANDS)                                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  1. Navigate to Service
+     $ cd Web_Backend/notification-service
+
+  2. Verify Configuration
+     $ npm run verify
+
+  3. Start Service
+     $ npm run dev
+
+  Expected Output:
+    ✅ Notification Service connected to MongoDB
+    🚀 Apollo Server starting
+    🚀 Notification Service running on port 4005
+    📡 WebSocket server running on port 8080
+    ✅ GraphQL endpoint: http://localhost:4005/graphql
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 🧪 TESTING (IN ANOTHER TERMINAL)                                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Test Health Endpoint:
+    $ npm run test:health
+    Expected: HTTP 200 with service status
+
+  Test GraphQL Endpoint:
+    $ npm run test:graphql
+    Expected: GraphQL response with notification count
+
+  Send Test Notification:
+    $ curl -X POST http://localhost:4005/test-notification \
+      -H "Content-Type: application/json" \
+      -d '{"userId":"test-123","title":"Test","message":"Hello"}'
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 📋 CONFIGURATION CHECKLIST                                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Files:
+    [✓] .env created with defaults
+    [✓] .env.example created with templates
+    [✓] Configuration documented
+
+  Values:
+    [✓] PORT = 4005
+    [✓] WS_PORT = 8080
+    [✓] DATABASE = mongodb://localhost:27017/notification_service_db
+    [✓] CORS_ORIGIN configured for dev
+    [✓] Service URLs configured
+    [✓] JWT_SECRET configured
+
+  Scripts:
+    [✓] npm run dev        → Start service
+    [✓] npm run start      → Production start
+    [✓] npm run verify     → Check configuration
+    [✓] npm run test:*     → Test endpoints
+
+  Documentation:
+    [✓] SETUP.md           → Quick guide
+    [✓] CONFIGURATION.md   → Detailed guide
+    [✓] ENV_SETUP_COMPLETE.md → This file
+
+  Prerequisites:
+    [✓] Dependencies installed (npm install)
+    [ ] MongoDB running (check before starting)
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ⚠️  IMPORTANT: BEFORE STARTING                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Make Sure MongoDB is Running:
+
+  Option 1: Local MongoDB
+    $ mongosh
+
+  Option 2: Docker MongoDB
+    $ docker run -d -p 27017:27017 mongo:latest
+
+  Option 3: MongoDB Atlas (Cloud)
+    Update NOTIFICATION_MONGO_URI in .env with your Atlas connection string
+
+  If MongoDB is NOT running, service will fail to start!
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION                                                                │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Quick Reference:
+    File: SETUP.md
+    Time: 5 minutes
+    Contains: Quick start, testing, troubleshooting
+
+  Detailed Guide:
+    File: CONFIGURATION.md
+    Time: 10 minutes
+    Contains: All config options, database setup, email config
+
+  API Reference:
+    File: README.md
+    Time: 15 minutes
+    Contains: Complete API documentation
+
+  Integration:
+    File: ../NOTIFICATION_INTEGRATION_EXAMPLES.md
+    Time: 15 minutes
+    Contains: Code examples for other services
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 🎯 NEXT STEPS                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Step 1: VERIFY (Now)
+    Run: npm run verify
+    Check: All configuration values are correct
+    Check: MongoDB connection works
+
+  Step 2: START (Next)
+    Run: npm run dev
+    Check: Service starts without errors
+    Check: GraphQL endpoint ready
+
+  Step 3: TEST (Verify Working)
+    Run: npm run test:health
+    Check: Service responds with healthy status
+    Check: All components ready
+
+  Step 4: INTEGRATE (When Ready)
+    See: NOTIFICATION_INTEGRATION_EXAMPLES.md
+    Integrate notification alerts in Issue Service
+    Integrate notification alerts in Engagement Service
+    Integrate notification alerts in AI Service
+
+  Step 5: CONFIGURE EMAIL (Optional)
+    Edit: .env
+    Choose: Email provider (Gmail, SendGrid, AWS SES)
+    Test: Email notifications
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 🔐 SECURITY NOTES                                                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Current Setup (Development - SAFE):
+    ✓ .env is in .gitignore
+    ✓ Uses localhost database
+    ✓ CORS restricted to local origins
+    ✓ JWT_SECRET is placeholder
+
+  Production Changes (When Deploying):
+    [ ] Update JWT_SECRET to strong value
+    [ ] Use MongoDB Atlas or managed database
+    [ ] Update CORS_ORIGIN to production domain
+    [ ] Configure real email provider
+    [ ] Set NODE_ENV=production
+    [ ] Use HTTPS and WSS protocols
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 📊 SERVICE ENDPOINTS                                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  HTTP Server:        http://localhost:4005
+  GraphQL API:        http://localhost:4005/graphql
+  Health Check:       http://localhost:4005/health
+  WebSocket:          ws://localhost:8080
+  REST API:           http://localhost:4005/notifications/*
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ❓ TROUBLESHOOTING                                                              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+  Issue: MongoDB Connection Failed
+    Solution: Ensure MongoDB is running (mongosh or docker run)
+
+  Issue: Port Already in Use
+    Solution: Change PORT and WS_PORT in .env
+
+  Issue: CORS Errors in Frontend
+    Solution: Add frontend URL to CORS_ORIGIN in .env
+
+  Issue: Cannot find module 'graphql-tag'
+    Solution: Run npm install in notification-service directory
+
+  Issue: Service crashes on startup
+    Solution: Run npm run verify to check configuration
+
+═════════════════════════════════════════════════════════════════════════════════
+
+                    ✅ CONFIGURATION COMPLETE AND READY
+                       Status: Ready to Start
+                       Next: Run npm run verify
+
+═════════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## Summary
+
+✅ **Environment configuration is complete and ready to go!**
+
+### What Was Done
+1. Created `.env` file with all necessary configuration
+2. Created `.env.example` as documentation template
+3. Added verification script to test configuration
+4. Updated `package.json` with useful npm scripts
+5. Created comprehensive setup documentation
+
+### What You Need to Do
+1. **Verify MongoDB is running**
+   - Local: `mongosh`
+   - Docker: `docker run -d -p 27017:27017 mongo:latest`
+
+2. **Run verification**
+   ```bash
+   cd Web_Backend/notification-service
+   npm run verify
+   ```
+
+3. **Start the service**
+   ```bash
+   npm run dev
+   ```
+
+4. **Test it's working**
+   ```bash
+   npm run test:health
+   ```
+
+### Configuration Details
+- **HTTP Port**: 4005
+- **WebSocket Port**: 8080
+- **Database**: mongodb://localhost:27017/notification_service_db
+- **CORS**: 5 development origins configured
+- **Services**: All 4 microservices URLs configured
+
+### Files Created
+- `.env` - Active configuration
+- `.env.example` - Configuration template
+- `verify-config.js` - Verification script
+- `SETUP.md` - Quick start guide
+- `CONFIGURATION.md` - Detailed guide
+- `ENV_SETUP_COMPLETE.md` - This summary
+
+Everything is ready. Follow the quickstart above to get started!

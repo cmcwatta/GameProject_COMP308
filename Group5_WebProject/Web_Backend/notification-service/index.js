@@ -2,8 +2,13 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4';
+import { buildSubgraphSchema } from '@apollo/subgraph';
 import { config } from './config/config.js';
 import Notification from './models/Notification.js';
+import { typeDefs } from './graphql/typeDefs.js';
+import { resolvers } from './graphql/resolvers.js';
 
 const app = express();
 
@@ -25,6 +30,32 @@ app.use(express.json());
 // WebSocket server
 const wss = new WebSocketServer({ port: config.wsPort });
 const clients = new Map(); // userId -> WebSocket
+
+// Initialize Apollo Server
+let apolloServer;
+async function startApolloServer() {
+  const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
+  
+  apolloServer = new ApolloServer({
+    schema,
+    plugins: [
+      {
+        async serverWillStart() {
+          console.log('🚀 Apollo Server starting');
+        },
+      },
+    ],
+  });
+
+  await apolloServer.start();
+  
+  app.use(
+    '/graphql',
+    expressMiddleware(apolloServer, {
+      context: async ({ req }) => ({ req }),
+    })
+  );
+}
 
 wss.on('connection', (ws, req) => {
   console.log('🔌 New WebSocket connection');
@@ -97,7 +128,7 @@ async function markNotificationAsRead(notificationId, userId) {
   }
 }
 
-// Send notification to user
+// Send notification to user (exported for other services)
 export async function sendNotification(userId, notificationData) {
   try {
     // Save to database
@@ -125,7 +156,7 @@ export async function sendNotification(userId, notificationData) {
   }
 }
 
-// Send urgent alert to all users in area
+// Send urgent alert to all users in area (exported for other services)
 export async function sendUrgentAlert(area, message, issueId) {
   try {
     const notification = {
@@ -245,7 +276,8 @@ app.get('/health', (req, res) => {
       connectedClients: clients.size,
       port: config.wsPort
     },
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    graphql: apolloServer ? 'ready' : 'initializing'
   });
 });
 
@@ -270,16 +302,18 @@ app.post('/test-notification', async (req, res) => {
   }
 });
 
-// Start HTTP server
-app.listen(config.port, () => {
-  console.log(`🚀 Notification Service running on port ${config.port}`);
-  console.log(`📡 WebSocket server running on port ${config.wsPort}`);
-  console.log(`✅ Health check: http://localhost:${config.port}/health`);
-  console.log(`🔌 WebSocket connect: ws://localhost:${config.wsPort}`);
-});
-
-// Export functions for other services to use
-
+// Start server
+const startServer = async () => {
+  await startApolloServer();
+  
+  app.listen(config.port, () => {
+    console.log(`🚀 Notification Service running on port ${config.port}`);
+    console.log(`📡 WebSocket server running on port ${config.wsPort}`);
+    console.log(`✅ GraphQL endpoint: http://localhost:${config.port}/graphql`);
+    console.log(`✅ Health check: http://localhost:${config.port}/health`);
+    console.log(`🔌 WebSocket connect: ws://localhost:${config.wsPort}`);
+  });
+};
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
@@ -290,9 +324,20 @@ process.on('SIGINT', async () => {
     client.close();
   });
   
+  // Close Apollo Server
+  if (apolloServer) {
+    await apolloServer.stop();
+  }
+  
   // Close MongoDB connection
   await mongoose.connection.close();
   
   console.log('✅ Notification Service shut down');
   process.exit(0);
+});
+
+// Start the server
+startServer().catch(err => {
+  console.error('❌ Failed to start server:', err);
+  process.exit(1);
 });

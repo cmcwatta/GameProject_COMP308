@@ -1,4 +1,5 @@
 import { AIService } from '../services/aiService.js';
+import { AlertService } from '../services/alertService.js';
 
 const resolvers = {
   Query: {
@@ -26,7 +27,27 @@ const resolvers = {
     },
     
     generateInsights: async (_, { issues }) => {
-      return await AIService.generateInsights(issues);
+      try {
+        const insights = await AIService.generateInsights(issues);
+        
+        // Send notification about AI insights
+        try {
+          if (insights && insights.length > 0) {
+            await AlertService.notifyAIInsight({
+              insights,
+              issueCount: issues ? issues.length : 0,
+              generatedAt: new Date().toISOString(),
+            });
+          }
+        } catch (notificationError) {
+          console.warn('Failed to send AI insight notification:', notificationError);
+        }
+        
+        return insights;
+      } catch (error) {
+        console.error('Error generating insights:', error);
+        throw error;
+      }
     }
   },
   

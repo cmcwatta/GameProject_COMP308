@@ -37,6 +37,14 @@ app.use('/ai', createProxyMiddleware({
   },
 }));
 
+app.use('/notification', createProxyMiddleware({
+  target: config.services.notification.replace('/graphql', ''),
+  changeOrigin: true,
+  pathRewrite: {
+    '^/notification': '',
+  },
+}));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -47,6 +55,7 @@ app.get('/health', (req, res) => {
       auth: '/auth/graphql',
       engagement: '/engagement/graphql',
       ai: '/ai/graphql',
+      notification: '/notification/graphql',
     },
   });
 });
@@ -59,6 +68,7 @@ app.get('/', (req, res) => {
       auth: `${req.protocol}://${req.get('host')}/auth/graphql`,
       engagement: `${req.protocol}://${req.get('host')}/engagement/graphql`,
       ai: `${req.protocol}://${req.get('host')}/ai/graphql`,
+      notification: `${req.protocol}://${req.get('host')}/notification/graphql`,
     },
     health: `${req.protocol}://${req.get('host')}/health`,
   });
@@ -70,5 +80,6 @@ app.listen(config.port, () => {
   console.log(`🔐 Auth Service: http://localhost:${config.port}/auth/graphql`);
   console.log(`🏗️ Engagement Service: http://localhost:${config.port}/engagement/graphql`);
   console.log(`🤖 AI Service: http://localhost:${config.port}/ai/graphql`);
+  console.log(`🔔 Notification Service: http://localhost:${config.port}/notification/graphql`);
   console.log(`📊 Health check: http://localhost:${config.port}/health`);
 });

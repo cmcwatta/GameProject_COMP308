@@ -1,4 +1,5 @@
 import Issue from '../models/Issue.js';
+import { AlertService } from '../services/alertService.js';
 
 export const resolvers = {
   Issue: {
@@ -96,6 +97,23 @@ export const resolvers = {
         });
 
         const savedIssue = await newIssue.save();
+        
+        // Send notification about new issue creation
+        try {
+          await AlertService.notifyIssueCreated({
+            issueId: savedIssue._id.toString(),
+            title: savedIssue.title,
+            description: savedIssue.description,
+            category: savedIssue.category,
+            submitterId: savedIssue.submitterId,
+            submitterName: savedIssue.submitterName,
+            location: savedIssue.location,
+            priority: savedIssue.priority,
+          });
+        } catch (notificationError) {
+          console.warn('Failed to send issue creation notification:', notificationError);
+        }
+        
         return savedIssue;
       } catch (error) {
         console.error('Error creating issue:', error);
@@ -130,6 +148,23 @@ export const resolvers = {
           updateData.completedAt = new Date();
         }
         const issue = await Issue.findByIdAndUpdate(id, updateData, { new: true });
+        
+        // Send notification about status change
+        if (issue) {
+          try {
+            await AlertService.notifyIssueStatusChanged({
+              issueId: issue._id.toString(),
+              title: issue.title,
+              previousStatus: (await Issue.findById(id)).status,
+              newStatus: status,
+              submitterId: issue.submitterId,
+              submitterName: issue.submitterName,
+            });
+          } catch (notificationError) {
+            console.warn('Failed to send status change notification:', notificationError);
+          }
+        }
+        
         return issue;
       } catch (error) {
         console.error('Error updating status:', error);

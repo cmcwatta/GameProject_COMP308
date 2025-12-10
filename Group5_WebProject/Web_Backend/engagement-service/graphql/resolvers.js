@@ -1,5 +1,7 @@
 import Comment from '../models/Comment.js';
 import Volunteer from '../models/Volunteer.js';
+import { AlertService } from '../services/alertService.js';
+
 const resolvers = {
   Query: {
     getComments: async (_, { issueId }) => {
@@ -25,6 +27,20 @@ const resolvers = {
         });
         
         await comment.save();
+        
+        // Send notification about new comment
+        try {
+          await AlertService.notifyNewComment({
+            issueId,
+            commentId: comment._id.toString(),
+            content,
+            authorId: user.userId,
+            author: user.username,
+          });
+        } catch (notificationError) {
+          console.warn('Failed to send comment notification:', notificationError);
+        }
+        
         return {
           id: comment._id.toString(),
           issueId: comment.issueId,
@@ -138,6 +154,17 @@ const resolvers = {
         });
         
         await volunteer.save();
+        
+        // Send notification about new volunteer match
+        try {
+          await AlertService.notifyVolunteerMatch({
+            issueId,
+            volunteerId: user.userId,
+            volunteerName: user.username,
+          });
+        } catch (notificationError) {
+          console.warn('Failed to send volunteer match notification:', notificationError);
+        }
         
         return data.data?.addVolunteer;
       } catch (error) {

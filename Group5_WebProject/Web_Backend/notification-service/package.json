@@ -5,10 +5,17 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "verify": "node verify-config.js",
+    "test:health": "curl http://localhost:4005/health",
+    "test:graphql": "curl -X POST http://localhost:4005/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ getUnreadCount(userId: \\\"test\\\") { unreadCount } }\"}'"
   },
   "dependencies": {
+    "@apollo/server": "^4.9.5",
+    "@apollo/subgraph": "^2.7.2",
     "express": "^4.18.2",
+    "graphql": "^16.8.1",
+    "graphql-tag": "^2.12.6",
     "mongoose": "^8.0.3",
     "ws": "^8.14.2",
     "dotenv": "^16.3.1",
