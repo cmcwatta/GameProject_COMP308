@@ -223,7 +223,7 @@ const IssueReportPage = () => {
         latitude: formData.location.latitude,
         longitude: formData.location.longitude,
         address: formData.location.address,
-        submitterId: user?.id,
+        submitterId: user?.userId,
         submitterName: user?.username
       }
     };
