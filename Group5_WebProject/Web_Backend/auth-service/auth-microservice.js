@@ -1,6 +1,5 @@
-// server/microservices/auth-service/auth-microservice.js
 import dotenv from 'dotenv';
-dotenv.config({ path: './.env' });
+dotenv.config();
 
 import { config } from './config/config.js';
 import express from 'express';
@@ -15,56 +14,78 @@ import jwt from 'jsonwebtoken';
 import connectDB from './config/mongoose.js';
 import typeDefs from './graphql/typeDef.js';
 import resolvers from './graphql/resolvers.js';
-//
-console.log("🔍 JWT_SECRET in service:", process.env.JWT_SECRET);
 
 // Connect to MongoDB
 connectDB();
 
 const app = express();
+
+// CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000','http://localhost:3001', 'http://localhost:3002', 'http://localhost:4000','http://localhost:5173', 'https://studio.apollographql.com'],
+  origin: config.cors.origin,
   credentials: true,
 }));
+
+// Middleware
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// typeDefs is already parsed by gql tag, no need to parse again
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'Auth Service',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv
+  });
+});
+
+// GraphQL setup
 const schema = buildSubgraphSchema([{ typeDefs, resolvers }]);
-// 
+
 const server = new ApolloServer({
   schema,
   introspection: true,
 });
-// 
+
 async function startServer() {
   await server.start();
-  // 
+  
   app.use('/graphql', expressMiddleware(server, {
     context: async ({ req, res }) => {
-      console.log("🔍 Auth Microservice: Checking request cookies:", req.cookies);
       // Check for token in cookies or headers
       const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
       let user = null;
+      
       // Verify token
       if (token) {
         try {
-          const decoded = jwt.verify(token, config.JWT_SECRET);
-          user = { username: decoded.username };
-          console.log("✅ Authenticated User:", user);
+          const decoded = jwt.verify(token, config.jwtSecret);
+          user = {
+            userId: decoded.userId,
+            username: decoded.username,
+            email: decoded.email,
+            role: decoded.role
+          };
         } catch (error) {
-          console.error("🚨 Token verification failed:", error);
+          console.error("Token verification failed:", error.message);
         }
       }
-      // Return context
+      
       return { user, req, res };
     }
   }));
   
-  //
-  //
-  app.listen(config.port, () => console.log(`🚀 Auth Microservice running at http://localhost:${config.port}/graphql`));
+  app.listen(config.port, () => {
+    console.log(`🚀 Auth Service running at http://localhost:${config.port}`);
+    console.log(`📡 GraphQL endpoint: http://localhost:${config.port}/graphql`);
+    console.log(`✅ Health check: http://localhost:${config.port}/health`);
+    console.log(`👥 User roles: ${['resident', 'municipal_staff', 'community_advocate', 'admin'].join(', ')}`);
+  });
 }
-//
-startServer();
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});

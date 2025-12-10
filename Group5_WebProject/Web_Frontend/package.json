@@ -1,25 +1,44 @@
+
 {
-  "name": "civic-platform-frontend",
+  "name": "auth-frontend",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "auth_frontend",
-    "issue_frontend",
-    "analytics_frontend",
-    "shared"
-  ],
-  "scripts": {
-    "dev": "concurrently \"npm run dev:auth\" \"npm run dev:issue\" \"npm run dev:analytics\"",
-    "dev:auth": "cd auth_frontend && npm run dev",
-    "dev:issue": "cd issue_frontend && npm run dev",
-    "dev:analytics": "cd analytics_frontend && npm run dev",
-    "build": "npm run build:auth && npm run build:issue && npm run build:analytics",
-    "build:auth": "cd auth_frontend && npm run build",
-    "build:issue": "cd issue_frontend && npm run build",
-    "build:analytics": "cd analytics_frontend && npm run build",
-    "start": "concurrently \"npm run start:auth\" \"npm run start:issue\" \"npm run start:analytics\""
+  "dependencies": {
+    "@apollo/client": "^3.9.0",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "axios": "^1.6.2",
+    "graphql": "^16.8.1",
+    "jwt-decode": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.20.0",
+    "react-scripts": "5.0.1"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.0"
+  "scripts": {
+    "start": "react-scripts start",
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

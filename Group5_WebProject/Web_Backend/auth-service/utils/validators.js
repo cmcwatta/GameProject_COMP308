@@ -10,3 +10,8 @@ export const validatePassword = (password) => {
 export const validateUsername = (username) => {
   return username.length >= 3 && username.length <= 30;
 };
+
+export const validateRole = (role) => {
+  const validRoles = ['resident', 'municipal_staff', 'community_advocate', 'admin'];
+  return validRoles.includes(role);
+};

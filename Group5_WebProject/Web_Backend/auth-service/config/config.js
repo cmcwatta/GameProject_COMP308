@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  port: process.env.AUTH_PORT || 4001,
+  port: process.env.AUTH_PORT || 4000,
   db: process.env.AUTH_MONGO_URI || 'mongodb://localhost:27017/authServiceDB',
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_here',
   nodeEnv: process.env.NODE_ENV || 'development',

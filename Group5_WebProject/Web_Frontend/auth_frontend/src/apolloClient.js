@@ -1,7 +1,7 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client'
+﻿import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
 
-const API_URL = import.meta.env.VITE_AUTH_URL || 'http://localhost:4000/auth'
+const API_URL = import.meta.env.VITE_AUTH_URL || 'http://localhost:4001/auth'
 
 // HTTP link
 const httpLink = createHttpLink({
@@ -34,3 +34,4 @@ export const client = new ApolloClient({
     },
   },
 })
+
