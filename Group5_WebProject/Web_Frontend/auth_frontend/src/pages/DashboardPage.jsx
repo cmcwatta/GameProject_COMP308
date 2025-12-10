@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useQuery, gql } from '@apollo/client';
 import NotificationsDashboard from '../components/notifications/NotificationsDashboard';
+import ProfileModal from '../components/profile/ProfileModal';
 import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
@@ -59,6 +60,7 @@ const DashboardPage = () => {
     resolutionRate: 0,
     trend: '+0 this month'
   });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Fetch recent issues
   const { data: issuesData, loading: issuesLoading } = useQuery(GET_RECENT_ISSUES);
@@ -192,7 +194,7 @@ const DashboardPage = () => {
             
             <div className="header-actions">
               <button 
-                onClick={() => navigate('/profile')}
+                onClick={() => setIsProfileModalOpen(true)}
                 className="header-action-btn profile-btn"
                 title="Profile"
               >
@@ -388,6 +390,9 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <ProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
     </div>
   );
 };
