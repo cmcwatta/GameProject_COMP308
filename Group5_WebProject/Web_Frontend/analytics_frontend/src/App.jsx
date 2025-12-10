@@ -45,7 +45,10 @@ const Backlog = () => (
 
 const Header = () => {
   const handleBack = () => {
-    window.location.href = 'http://localhost:5173/dashboard';
+    const token = localStorage.getItem('token');
+    window.location.href = token
+      ? `http://localhost:5173/dashboard?token=${encodeURIComponent(token)}`
+      : 'http://localhost:5173/dashboard';
   };
 
   return (
@@ -70,7 +73,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 localStorage.removeItem('token');
-                window.location.href = 'http://localhost:5173/';
+                window.location.href = 'http://localhost:5173/login';
               }}
               className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded"
             >

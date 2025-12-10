@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,12 +6,19 @@ const ProtectedRoute = ({ children, requiredRole = null, requiredRoles = null })
   const { isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      console.log('[ProtectedRoute] Not authenticated, redirecting to login');
+      // Redirect to auth frontend login
+      window.location.href = 'http://localhost:5173/login';
+    }
+  }, [isAuthenticated, loading, navigate]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    navigate('/login');
     return null;
   }
 

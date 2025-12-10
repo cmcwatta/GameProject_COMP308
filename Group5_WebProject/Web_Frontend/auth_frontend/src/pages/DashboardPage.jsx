@@ -165,15 +165,24 @@ const DashboardPage = () => {
   };
 
   const handleCreateIssue = () => {
-    window.location.href = 'http://localhost:5174/report';
+    const token = localStorage.getItem('token');
+    window.location.href = token 
+      ? `http://localhost:5174/report?token=${encodeURIComponent(token)}`
+      : 'http://localhost:5174/report';
   };
 
   const handleViewAnalytics = () => {
-    window.location.href = 'http://localhost:5175/analytics';
+    const token = localStorage.getItem('token');
+    window.location.href = token 
+      ? `http://localhost:5175/analytics?token=${encodeURIComponent(token)}`
+      : 'http://localhost:5175/analytics';
   };
 
   const handleViewIssues = () => {
-    window.location.href = 'http://localhost:5174/issues';
+    const token = localStorage.getItem('token');
+    window.location.href = token 
+      ? `http://localhost:5174/issues?token=${encodeURIComponent(token)}`
+      : 'http://localhost:5174/issues';
   };
 
   return (
@@ -344,7 +353,11 @@ const DashboardPage = () => {
                     </div>
                     <button
                       onClick={() => {
-                        window.location.href = `http://localhost:5174/issues/${issue.id}`;
+                        const token = localStorage.getItem('token');
+                        const url = `http://localhost:5174/issues/${issue.id}`;
+                        window.location.href = token 
+                          ? `${url}?token=${encodeURIComponent(token)}`
+                          : url;
                       }}
                       className="view-button"
                     >

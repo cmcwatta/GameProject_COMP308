@@ -213,7 +213,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
         {/* Action Buttons */}
         <div className="profile-actions">
           <button className="profile-action-btn view-issues" onClick={() => {
-            window.location.href = 'http://localhost:5174/issues';
+            const token = localStorage.getItem('token');
+            window.location.href = token 
+              ? `http://localhost:5174/issues?token=${encodeURIComponent(token)}`
+              : 'http://localhost:5174/issues';
           }}>
             View My Issues
           </button>
