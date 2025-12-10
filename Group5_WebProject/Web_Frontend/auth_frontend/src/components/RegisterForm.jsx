@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { AuthService } from '../services/authService.jsx'
 
 export default function RegisterForm() {
-  const [username, setUsername] = useState('')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -28,7 +28,7 @@ export default function RegisterForm() {
     setLoading(true)
 
     try {
-      const { data } = await AuthService.register(username, email, password)
+      const { data } = await AuthService.register(name, email, password)
       
       if (data.register.token) {
         AuthService.setToken(data.register.token)
@@ -54,14 +54,14 @@ export default function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Username
+            Full Name
           </label>
           <input
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Choose a username"
+            placeholder="Enter your full name"
             required
           />
         </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthService } from '../services/authService.jsx'
+import '../styles/profile.css'
 
 export default function ProfileForm() {
   const [user, setUser] = useState(null)
-  const [username, setUsername] = useState('')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
@@ -18,14 +19,32 @@ export default function ProfileForm() {
 
   const loadUserProfile = async () => {
     try {
-      const { data } = await AuthService.getCurrentUser()
-      setUser(data.getCurrentUser)
-      setUsername(data.getCurrentUser.username)
-      setEmail(data.getCurrentUser.email)
+      console.log("📝 ProfileForm: Loading user profile...");
+      const result = await AuthService.getCurrentUser()
+      console.log("📝 ProfileForm: Got result:", result);
+      
+      if (!result || !result.data) {
+        throw new Error('No data returned from server');
+      }
+      
+      if (!result.data.getCurrentUser) {
+        console.error("📝 ProfileForm: getCurrentUser is undefined in response:", result.data);
+        throw new Error('User data not found in response');
+      }
+      
+      const userData = result.data.getCurrentUser;
+      console.log("📝 ProfileForm: Setting user data:", userData);
+      
+      setUser(userData);
+      setName(userData.name || '');
+      setEmail(userData.email || '');
+      setError('');
     } catch (err) {
-      setError('Failed to load profile')
+      console.error("🚨 ProfileForm: Error loading profile:", err);
+      setError(err.message || 'Failed to load profile');
+      setUser(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -36,7 +55,7 @@ export default function ProfileForm() {
     setUpdating(true)
 
     try {
-      const { data } = await AuthService.updateProfile(username, email)
+      const { data } = await AuthService.updateProfile(name, email)
       setUser(data.updateProfile)
       setMessage('Profile updated successfully!')
     } catch (err) {
@@ -58,100 +77,102 @@ export default function ProfileForm() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="loading-spinner">
+        <div className="spinner"></div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Profile</h2>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-        >
-          Logout
-        </button>
-      </div>
-
-      {message && (
-        <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md">
-          {message}
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
-          {error}
-        </div>
-      )}
-
-      <div className="mb-6 p-4 bg-gray-50 rounded-md">
-        <h3 className="font-semibold text-gray-700 mb-2">User Information</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Role</p>
-            <p className="font-medium capitalize">{user?.role}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Member Since</p>
-            <p className="font-medium">
-              {new Date(user?.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleUpdate} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Username
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={updating}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {updating ? 'Updating...' : 'Update Profile'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-gray-600">
-          Need to report an issue?{' '}
-          <a 
-            href="http://localhost:3002" 
-            className="text-blue-600 hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="profile-page">
+      <div className="profile-container">
+        <div className="profile-header">
+          <h2 className="profile-title">Profile</h2>
+          <button
+            onClick={handleLogout}
+            className="btn-secondary"
           >
-            Go to Issue Reporter
-          </a>
-        </p>
+            Logout
+          </button>
+        </div>
+
+        {message && (
+          <div className="profile-alert success">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="profile-alert error">
+            {error}
+          </div>
+        )}
+
+        <div className="user-info-section">
+          <h3 className="user-info-title">User Information</h3>
+          <div className="user-info-grid">
+            <div className="info-item">
+              <p className="info-label">Role</p>
+              <p className="info-value">{user?.role}</p>
+            </div>
+            <div className="info-item">
+              <p className="info-label">Member Since</p>
+              <p className="info-value">
+                {new Date(user?.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleUpdate} className="profile-form">
+          <div className="form-group">
+            <label className="form-label">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="form-input"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={updating}
+            className="btn-primary"
+          >
+            {updating ? 'Updating...' : 'Update Profile'}
+          </button>
+        </form>
+
+        <div className="profile-footer">
+          <p className="profile-footer-text">
+            Need to report an issue?{' '}
+            <a 
+              href="http://localhost:3002" 
+              className="profile-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Go to Issue Reporter
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

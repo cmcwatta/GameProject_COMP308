@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client'
-import { client } from '../apollo/client.js'
+import { client } from '../apolloClient.js'
 
 // GraphQL Queries & Mutations
 const LOGIN_MUTATION = gql`
@@ -8,8 +8,8 @@ const LOGIN_MUTATION = gql`
       token
       user {
         id
-        username
         email
+        name
         role
       }
     }
@@ -17,13 +17,13 @@ const LOGIN_MUTATION = gql`
 `
 
 const REGISTER_MUTATION = gql`
-  mutation Register($username: String!, $email: String!, $password: String!) {
-    register(username: $username, email: $email, password: $password) {
+  mutation Register($name: String!, $email: String!, $password: String!) {
+    register(name: $name, email: $email, password: $password) {
       token
       user {
         id
-        username
         email
+        name
         role
       }
     }
@@ -34,7 +34,7 @@ const GET_CURRENT_USER = gql`
   query GetCurrentUser {
     getCurrentUser {
       id
-      username
+      name
       email
       role
       createdAt
@@ -43,10 +43,10 @@ const GET_CURRENT_USER = gql`
 `
 
 const UPDATE_PROFILE = gql`
-  mutation UpdateProfile($username: String, $email: String) {
-    updateProfile(username: $username, email: $email) {
+  mutation UpdateProfile($name: String, $email: String) {
+    updateProfile(name: $name, email: $email) {
       id
-      username
+      name
       email
       role
     }
@@ -68,6 +68,15 @@ export class AuthService {
         variables: { email, password }
       })
       
+      if (!data) {
+        throw new Error('No data returned from server')
+      }
+      
+      if (!data.login) {
+        console.error('Login mutation returned undefined:', data)
+        throw new Error('Login mutation failed - server returned no login data')
+      }
+      
       if (data.login.token) {
         localStorage.setItem('token', data.login.token)
         localStorage.setItem('user', JSON.stringify(data.login.user))
@@ -75,15 +84,16 @@ export class AuthService {
       
       return data
     } catch (error) {
-      throw new Error(error.message)
+      console.error('Login error:', error)
+      throw new Error(error.message || 'Login failed. Please try again.')
     }
   }
 
-  static async register(username, email, password) {
+  static async register(name, email, password) {
     try {
       const { data } = await client.mutate({
         mutation: REGISTER_MUTATION,
-        variables: { username, email, password }
+        variables: { name, email, password }
       })
       
       if (data.register.token) {
@@ -99,21 +109,24 @@ export class AuthService {
 
   static async getCurrentUser() {
     try {
-      const { data } = await client.query({
+      console.log("📝 AuthService: Fetching current user...");
+      const result = await client.query({
         query: GET_CURRENT_USER,
         fetchPolicy: 'network-only'
       })
-      return data
+      console.log("📝 AuthService: getCurrentUser response:", result);
+      return result;
     } catch (error) {
-      throw new Error(error.message)
+      console.error("🚨 AuthService: getCurrentUser error:", error);
+      throw new Error(error.message || 'Failed to get current user');
     }
   }
 
-  static async updateProfile(username, email) {
+  static async updateProfile(name, email) {
     try {
       const { data } = await client.mutate({
         mutation: UPDATE_PROFILE,
-        variables: { username, email }
+        variables: { name, email }
       })
       
       // Update stored user

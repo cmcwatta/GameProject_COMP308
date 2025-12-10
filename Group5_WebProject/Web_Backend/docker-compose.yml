@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0-latest
+    container_name: civic-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: civic-issue-tracker
+      # MONGO_INITDB_ROOT_USERNAME: admin
+      # MONGO_INITDB_ROOT_PASSWORD: changeme
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - civic-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: civic-auth-service
+    ports:
+      - "4001:4001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/civic-issue-tracker}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      AUTH_SERVICE_PORT: 4001
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - civic-network
+    restart: unless-stopped
+
+  # Issue Service
+  issue-service:
+    build:
+      context: ./issue-service
+      dockerfile: Dockerfile
+    container_name: civic-issue-service
+    ports:
+      - "4002:4002"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/civic-issue-tracker}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      ISSUE_SERVICE_PORT: 4002
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - civic-network
+    restart: unless-stopped
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: civic-ai-service
+    ports:
+      - "4003:4003"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/civic-issue-tracker}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      AI_SERVICE_PORT: 4003
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - civic-network
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: civic-notification-service
+    ports:
+      - "4005:4005"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/civic-issue-tracker}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      NOTIFICATION_SERVICE_PORT: 4005
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - civic-network
+    restart: unless-stopped
+
+  # Apollo Gateway
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: civic-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-change-in-production}
+      GATEWAY_PORT: 4000
+    depends_on:
+      - auth-service
+      - issue-service
+      - ai-service
+    networks:
+      - civic-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+
+networks:
+  civic-network:
+    driver: bridge

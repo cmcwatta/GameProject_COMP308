@@ -43,21 +43,31 @@ async function startServer() {
   // 
   app.use('/graphql', expressMiddleware(server, {
     context: async ({ req, res }) => {
-      console.log("🔍 Auth Microservice: Checking request cookies:", req.cookies);
-      // Check for token in cookies or headers
-      const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+      // Check for token in Authorization header or cookies
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') 
+        ? authHeader.slice(7) 
+        : req.cookies?.token;
+      
       let user = null;
-      // Verify token
+      
+      // Verify token and extract user info
       if (token) {
         try {
           const decoded = jwt.verify(token, config.JWT_SECRET);
-          user = { username: decoded.username };
-          console.log("✅ Authenticated User:", user);
+          user = {
+            userId: decoded.userId,
+            email: decoded.email,
+            role: decoded.role
+          };
+          console.log("✅ Auth Microservice: Authenticated user:", user.userId);
         } catch (error) {
-          console.error("🚨 Token verification failed:", error);
+          console.error("🚨 Auth Microservice: Token verification failed:", error.message);
         }
+      } else {
+        console.log("🔍 Auth Microservice: No token provided");
       }
-      // Return context
+      
       return { user, req, res };
     }
   }));

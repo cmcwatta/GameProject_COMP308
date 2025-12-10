@@ -1,64 +1,118 @@
 import gql from 'graphql-tag';
 
 const typeDefs = gql`
-  scalar Date
-  
-  type AIAnalysis {
-    category: String!
-    priority: String!
-    suggestedDepartment: String!
-    confidence: Float!
-    tags: [String!]!
-    estimatedResponseTime: String!
-  }
-  
-  type Trend {
-    pattern: String!
-    location: String!
-    frequency: String!
-    severity: String!
-    recommendation: String!
-  }
-  
-  type ChatbotResponse {
-    response: String!
-    suggestedActions: [String!]!
-    followupQuestions: [String!]!
-  }
-  
-  type Insights {
-    summary: String!
-    trends: [Trend!]!
-    totalIssues: Int!
-    generatedAt: Date!
-  }
-  
-  type Query {
-    # Health check
-    health: String!
-    
-    # AI Functions
-    classifyIssue(description: String!): AIAnalysis!
-    chatbotQuery(query: String!, userRole: String, location: String): ChatbotResponse!
-    summarizeIssues(issues: [IssueInput!]!): String!
-    detectTrends(issues: [IssueInput!]!): [Trend!]!
-    analyzeSentiment(text: String!): String!
-    generateInsights(issues: [IssueInput!]!): Insights!
-  }
-  
-  type Mutation {
-    # Training functions
-    trainModel(data: String!): Boolean!
-    clearCache: Boolean!
-  }
-  
-  input IssueInput {
-    title: String!
-    description: String!
-    category: String
-    status: String!
-    createdAt: Date!
-  }
+    scalar Date
+
+    type DashboardMetrics {
+        totalIssues: Int!
+        openIssues: Int!
+        resolvedIssues: Int!
+        averageResolutionTime: Float!
+        issuesByCategory: [CategoryCount!]!
+        issuesByStatus: [StatusCount!]!
+    }
+
+    type CategoryCount {
+        category: String!
+        count: Int!
+    }
+
+    type StatusCount {
+        status: String!
+        count: Int!
+    }
+
+    type TrendAnalysis {
+        emergingIssues: [EmergingIssue!]!
+        hotspots: [Hotspot!]!
+        sentimentTrend: [SentimentPoint!]!
+    }
+
+    type EmergingIssue {
+        category: String!
+        count: Int!
+        trend: String!
+    }
+
+    type Hotspot {
+        latitude: Float!
+        longitude: Float!
+        issueCount: Int!
+        categories: [String!]!
+    }
+
+    type SentimentPoint {
+        timestamp: Date!
+        averageSentiment: Float!
+    }
+
+    type IssueSummary {
+        summary: String!
+        keyPoints: [String!]!
+        suggestedCategory: String!
+        priority: String!
+        confidence: Float!
+    }
+
+    type ChatbotResponse {
+        response: String!
+        sources: [Source!]!
+        suggestedActions: [SuggestedAction!]!
+        confidence: Float!
+    }
+
+    type Source {
+        issueId: ID!
+        title: String!
+        relevance: Float!
+    }
+
+    type SuggestedAction {
+        type: String!
+        description: String!
+    }
+
+    type ClassificationResult {
+        suggestedCategory: String!
+        confidence: Float!
+        alternativeCategories: [CategoryOption!]!
+        suggestedPriority: String!
+        expectedResolutionTime: String!
+    }
+
+    type CategoryOption {
+        category: String!
+        confidence: Float!
+    }
+
+    type SentimentResult {
+        overallSentiment: Float!
+        score: Float!
+        comments: [CommentSentiment!]!
+    }
+
+    type CommentSentiment {
+        commentId: ID!
+        sentiment: Float!
+        score: Float!
+    }
+
+    type Query {
+        getDashboardMetrics: DashboardMetrics!
+        getTrendAnalysis: TrendAnalysis!
+        getIssueSummary(issueId: ID!): IssueSummary
+        chatbot(message: String!, userId: ID): ChatbotResponse!
+        classifyIssue(description: String!, category: String): ClassificationResult!
+        analyzeSentiment(issueId: ID!): SentimentResult
+    }
+
+    type Mutation {
+        processChatbotMessage(
+            message: String!
+            userId: ID!
+            context: String
+        ): ChatbotResponse!
+    }
 `;
 
 export default typeDefs;

@@ -1,6 +1,9 @@
 import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4';
+import { ApolloGateway, IntrospectAndCompose } from '@apollo/gateway';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { config } from './config/config.js';
 
 const app = express();
@@ -12,30 +15,57 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Proxy to services
-app.use('/auth', createProxyMiddleware({
-  target: config.services.auth.replace('/graphql', ''),
-  changeOrigin: true,
-  pathRewrite: {
-    '^/auth': '',
-  },
-}));
+// Token verification middleware
+const verifyToken = (token) => {
+  if (!token) return null;
+  try {
+    return jwt.verify(token, config.jwtSecret);
+  } catch (error) {
+    return null;
+  }
+};
 
-app.use('/engagement', createProxyMiddleware({
-  target: config.services.engagement.replace('/graphql', ''),
-  changeOrigin: true,
-  pathRewrite: {
-    '^/engagement': '',
-  },
-}));
+// Apollo Gateway configuration with Apollo Federation
+const gateway = new ApolloGateway({
+  supergraphSdl: new IntrospectAndCompose({
+    subgraphs: [
+      { name: 'auth', url: 'http://localhost:4001/graphql' },
+      { name: 'issue', url: 'http://localhost:4002/graphql' },
+      { name: 'ai', url: 'http://localhost:4003/graphql' }
+    ],
+    pollIntervalInMs: 10000,
+  }),
+});
 
-app.use('/ai', createProxyMiddleware({
-  target: config.services.ai.replace('/graphql', ''),
-  changeOrigin: true,
-  pathRewrite: {
-    '^/ai': '',
+// Apollo Server setup with federation
+const server = new ApolloServer({
+  gateway,
+  context: ({ req }) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const user = verifyToken(token);
+    
+    if (token && user) {
+      console.log("✅ Gateway: Authenticated user ID:", user.userId);
+    } else if (token) {
+      console.log("🚨 Gateway: Token verification failed");
+    }
+    
+    return {
+      user: user || null,
+      token: token || null,
+      userId: user?.userId || null,
+      userRole: user?.role || null
+    };
   },
-}));
+  introspection: true,
+});
+
+// Start Apollo Server
+await server.start();
+
+// Apply GraphQL middleware
+app.use('/graphql', expressMiddleware(server));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -43,10 +73,11 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     service: 'API Gateway',
     timestamp: new Date().toISOString(),
-    routes: {
-      auth: '/auth/graphql',
-      engagement: '/engagement/graphql',
-      ai: '/ai/graphql',
+    federation: 'enabled',
+    subgraphs: {
+      auth: 'http://localhost:4001/graphql',
+      issue: 'http://localhost:4002/graphql',
+      ai: 'http://localhost:4003/graphql',
     },
   });
 });
@@ -54,11 +85,13 @@ app.get('/health', (req, res) => {
 // Welcome message
 app.get('/', (req, res) => {
   res.json({
-    message: 'Civic Engagement Platform API Gateway',
-    services: {
-      auth: `${req.protocol}://${req.get('host')}/auth/graphql`,
-      engagement: `${req.protocol}://${req.get('host')}/engagement/graphql`,
-      ai: `${req.protocol}://${req.get('host')}/ai/graphql`,
+    message: 'AI-Powered Local Issue Tracker - API Gateway',
+    graphql: `${req.protocol}://${req.get('host')}/graphql`,
+    federation: 'enabled',
+    subgraphs: {
+      auth: 'http://localhost:4001/graphql',
+      issue: 'http://localhost:4002/graphql',
+      ai: 'http://localhost:4003/graphql',
     },
     health: `${req.protocol}://${req.get('host')}/health`,
   });
@@ -66,9 +99,15 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(config.port, () => {
-  console.log(`🚀 API Gateway running on port ${config.port}`);
-  console.log(`🔐 Auth Service: http://localhost:${config.port}/auth/graphql`);
-  console.log(`🏗️ Engagement Service: http://localhost:${config.port}/engagement/graphql`);
-  console.log(`🤖 AI Service: http://localhost:${config.port}/ai/graphql`);
+  console.log(`🚀 Apollo Gateway running on port ${config.port}`);
+  console.log(`📡 GraphQL endpoint: http://localhost:${config.port}/graphql`);
+  console.log(`🔗 Apollo Federation enabled`);
+  console.log(`
+    ⚙️ Composed Subgraphs:
+    - Auth Service: http://localhost:4001/graphql
+    - Issue Service: http://localhost:4002/graphql
+    - AI Service: http://localhost:4003/graphql
+  `);
+  console.log(`🔐 JWT token verification active`);
   console.log(`📊 Health check: http://localhost:${config.port}/health`);
 });
