@@ -8,7 +8,7 @@ export const config = {
   // Server Configuration
   // -------------------------
   server: {
-    port: process.env.engagement_service_port || 4003,
+    port: process.env.engagement_service_port || 4004,
   },
 
   // -------------------------

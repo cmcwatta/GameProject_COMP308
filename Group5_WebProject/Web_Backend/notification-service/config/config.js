@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  port: parseInt(process.env.PORT) || 4004,
+  port: parseInt(process.env.PORT) || 4005,
   wsPort: parseInt(process.env.WS_PORT) || 8080,
   nodeEnv: process.env.NODE_ENV || 'development',
   
@@ -13,7 +13,8 @@ export const config = {
   
   services: {
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:4001/graphql',
-    engagement: process.env.ENGAGEMENT_SERVICE_URL || 'http://localhost:4003/graphql'
+    issue: process.env.ISSUE_SERVICE_URL || 'http://localhost:4003/graphql',
+    engagement: process.env.ENGAGEMENT_SERVICE_URL || 'http://localhost:4004/graphql'
   },
   
   cors: {

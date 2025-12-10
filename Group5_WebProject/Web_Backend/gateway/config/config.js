@@ -8,8 +8,10 @@ export const config = {
   
   services: {
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:4001/graphql',
-    engagement: process.env.ENGAGEMENT_SERVICE_URL || 'http://localhost:4003/graphql',
+    issue: process.env.ISSUE_SERVICE_URL || 'http://localhost:4003/graphql',
+    engagement: process.env.ENGAGEMENT_SERVICE_URL || 'http://localhost:4004/graphql',
     ai: process.env.AI_SERVICE_URL || 'http://localhost:4002/graphql',
+    notification: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:4005/graphql',
   },
   
   jwt: {
