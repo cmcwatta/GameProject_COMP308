@@ -1,6 +1,13 @@
 import Issue from '../models/Issue.js';
 
 export const resolvers = {
+  Issue: {
+    // Field resolvers
+    commentCount: (issue) => {
+      return issue.comments?.length || 0;
+    },
+  },
+
   Query: {
     issue: async (_, { id }) => {
       try {

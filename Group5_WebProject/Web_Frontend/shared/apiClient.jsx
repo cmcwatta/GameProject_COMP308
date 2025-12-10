@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
+import { ApolloClient, InMemoryCache, createHttpLink, from, ApolloLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import toast from 'react-hot-toast';
@@ -27,6 +27,51 @@ const aiServiceLink = createHttpLink({
 const notificationServiceLink = createHttpLink({
   uri: 'http://localhost:4005/graphql',
   credentials: 'include'
+});
+
+// Router link to direct operations to the correct service
+const routerLink = new ApolloLink((operation, forward) => {
+  const operationName = operation.operationName;
+  const definitions = operation.query.definitions;
+  
+  // Check if operation is a mutation or query/subscription and route accordingly
+  let selectedLink;
+  
+  // Check operation definitions to determine type
+  const isMutation = definitions.some(
+    def => def.operation === 'mutation'
+  );
+  
+  const isIssueRelated = operationName?.includes('Issue') || operationName?.includes('GetIssue');
+  const isEngagementRelated = operationName?.includes('Comment') || operationName?.includes('Upvote') || operationName?.includes('Volunteer');
+  const isAIRelated = operationName?.includes('Classify') || operationName?.includes('AI');
+  
+  // Route based on operation name and type
+  if (isMutation) {
+    if (isEngagementRelated) {
+      selectedLink = engagementServiceLink;
+    } else if (isAIRelated) {
+      selectedLink = aiServiceLink;
+    } else if (isIssueRelated) {
+      selectedLink = issueServiceLink;
+    } else {
+      // Default mutations go to auth service
+      selectedLink = authServiceLink;
+    }
+  } else {
+    // Queries
+    if (isIssueRelated) {
+      selectedLink = issueServiceLink;
+    } else if (isEngagementRelated) {
+      selectedLink = engagementServiceLink;
+    } else if (isAIRelated) {
+      selectedLink = aiServiceLink;
+    } else {
+      selectedLink = authServiceLink;
+    }
+  }
+  
+  return selectedLink.request(operation, forward);
 });
 
 // Auth link to add token to headers
@@ -65,7 +110,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
 // Create Apollo Client
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, authServiceLink]),
+  link: from([errorLink, authLink, routerLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {

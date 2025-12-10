@@ -52,7 +52,7 @@ const server = new ApolloServer({
 async function startServer() {
   await server.start();
   
-  app.use('/graphql', expressMiddleware(server, {
+  app.use('/graphql', cors(config.cors), expressMiddleware(server, {
     context: async ({ req, res }) => {
       // Check for token in cookies or headers
       const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];

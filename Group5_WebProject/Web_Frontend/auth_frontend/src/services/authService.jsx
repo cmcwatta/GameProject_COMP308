@@ -87,7 +87,7 @@ const UPDATE_USER_ROLE_MUTATION = gql`
 
 export const authService = {
   // Login with username
- async login(username, password) {
+  async login(username, password) {
     try {
       console.log('Attempting login with:', username);
       
@@ -105,37 +105,32 @@ export const authService = {
       return response.data.login;
     } catch (error) {
       console.error('Login API error:', error.message);
-      
-      // Fallback to mock data for development
-      console.log('Using mock data for login');
-      return {
-        token: 'mock-jwt-token-' + username,
-        user: {
-          id: 'mock-' + Date.now(),
-          username: username,
-          email: username + '@example.com',
-          role: username.includes('admin') ? 'admin' : 
-                username.includes('staff') ? 'municipal_staff' : 
-                username.includes('advocate') ? 'community_advocate' : 'resident',
-          createdAt: new Date().toISOString()
-        }
-      };
+      throw error;
     }
   },
 
 
   // Login with email
   async loginWithEmail(email, password) {
-    const response = await apolloClient.mutate({
-      mutation: LOGIN_WITH_EMAIL_MUTATION,
-      variables: { email, password }
-    });
-    
-    return response.data.loginWithEmail;
+    try {
+      const response = await apolloClient.mutate({
+        mutation: LOGIN_WITH_EMAIL_MUTATION,
+        variables: { email, password }
+      });
+      
+      if (response.errors) {
+        throw new Error(response.errors[0].message);
+      }
+      
+      return response.data.loginWithEmail;
+    } catch (error) {
+      console.error('Login with email error:', error.message);
+      throw error;
+    }
   },
 
   // Register new user
-async register(userData) {
+  async register(userData) {
     try {
       console.log('Attempting registration:', userData);
       
@@ -153,19 +148,7 @@ async register(userData) {
       return response.data.register;
     } catch (error) {
       console.error('Register API error:', error.message);
-      
-      // Fallback to mock data
-      console.log('Using mock data for registration');
-      return {
-        token: 'mock-jwt-register-' + userData.username,
-        user: {
-          id: 'reg-' + Date.now(),
-          username: userData.username,
-          email: userData.email,
-          role: userData.role || 'resident',
-          createdAt: new Date().toISOString()
-        }
-      };
+      throw error;
     }
   },
 

@@ -39,9 +39,9 @@ const GET_ISSUE_DETAIL_QUERY = gql`
         name
       }
       attachments {
-        url
-        type
         filename
+        fileUrl
+        uploadedAt
       }
       location {
         address
@@ -50,29 +50,15 @@ const GET_ISSUE_DETAIL_QUERY = gql`
       createdAt
       updatedAt
     }
-    comments(issueId: $id) {
-      id
-      content
-      author
-      authorId
-      createdAt
-      replies {
-        id
-        content
-        author
-        authorId
-        createdAt
-      }
-    }
   }
 `;
 
 const ADD_COMMENT_MUTATION = gql`
-  mutation AddComment($issueId: ID!, $content: String!, $author: String!, $authorId: ID!) {
-    addComment(issueId: $issueId, content: $content, author: $author, authorId: $authorId) {
+  mutation AddComment($issueId: ID!, $content: String!) {
+    addComment(issueId: $issueId, content: $content) {
       id
+      issueId
       content
-      author
       authorId
       createdAt
     }
@@ -80,8 +66,8 @@ const ADD_COMMENT_MUTATION = gql`
 `;
 
 const UPVOTE_ISSUE_MUTATION = gql`
-  mutation UpvoteIssue($issueId: ID!, $userId: ID!) {
-    upvoteIssue(issueId: $issueId, userId: $userId) {
+  mutation UpvoteIssue($issueId: ID!) {
+    upvoteIssue(issueId: $issueId) {
       id
       upvotes
     }
@@ -89,13 +75,12 @@ const UPVOTE_ISSUE_MUTATION = gql`
 `;
 
 const VOLUNTEER_MUTATION = gql`
-  mutation VolunteerForIssue($issueId: ID!, $userId: ID!, $name: String!) {
-    volunteersForIssue(issueId: $issueId, userId: $userId, name: $name) {
+  mutation VolunteerForIssue($issueId: ID!) {
+    volunteerForIssue(issueId: $issueId) {
       id
-      volunteers {
-        userId
-        name
-      }
+      issueId
+      userId
+      createdAt
     }
   }
 `;
@@ -122,7 +107,7 @@ const IssueDetailPage = () => {
   });
 
   const [addComment, { loading: commentLoading }] = useMutation(ADD_COMMENT_MUTATION, {
-    onSuccess: () => {
+    onCompleted: () => {
       toast.success('Comment added successfully!');
       setCommentText('');
       refetch();
@@ -131,7 +116,7 @@ const IssueDetailPage = () => {
   });
 
   const [upvoteIssue, { loading: upvoteLoading }] = useMutation(UPVOTE_ISSUE_MUTATION, {
-    onSuccess: () => {
+    onCompleted: () => {
       setHasUpvoted(true);
       toast.success('Issue upvoted!');
       refetch();
@@ -140,7 +125,7 @@ const IssueDetailPage = () => {
   });
 
   const [volunteerForIssue, { loading: volunteerLoading }] = useMutation(VOLUNTEER_MUTATION, {
-    onSuccess: () => {
+    onCompleted: () => {
       toast.success('You volunteered for this issue!');
       refetch();
     },
@@ -148,7 +133,7 @@ const IssueDetailPage = () => {
   });
 
   const [updateStatus, { loading: statusLoading }] = useMutation(UPDATE_ISSUE_STATUS_MUTATION, {
-    onSuccess: () => {
+    onCompleted: () => {
       toast.success('Issue status updated!');
       setSelectedStatus('');
       refetch();
@@ -157,7 +142,7 @@ const IssueDetailPage = () => {
   });
 
   const issue = data?.issue;
-  const comments = data?.comments || [];
+  const comments = []; // Comments will come from engagement service separately
 
   if (loading) {
     return (
@@ -243,9 +228,7 @@ const IssueDetailPage = () => {
     addComment({
       variables: {
         issueId: issue.id,
-        content: commentText,
-        author: user?.username || 'Anonymous',
-        authorId: user?.id
+        content: commentText
       }
     });
   };
@@ -253,8 +236,7 @@ const IssueDetailPage = () => {
   const handleUpvote = () => {
     upvoteIssue({
       variables: {
-        issueId: issue.id,
-        userId: user?.id
+        issueId: issue.id
       }
     });
   };
@@ -262,9 +244,7 @@ const IssueDetailPage = () => {
   const handleVolunteer = () => {
     volunteerForIssue({
       variables: {
-        issueId: issue.id,
-        userId: user?.id,
-        name: user?.username || 'Volunteer'
+        issueId: issue.id
       }
     });
   };
@@ -517,7 +497,7 @@ const IssueDetailPage = () => {
             <div className="stat-item">
               <span className="stat-label">Days Open</span>
               <span className="stat-value">
-                {Math.floor((new Date() - new Date(issue.createdAt)) / (1000 * 60 * 60 * 24))}
+                {issue.createdAt ? Math.floor((new Date() - new Date(issue.createdAt)) / (1000 * 60 * 60 * 24)) : 0}
               </span>
             </div>
           </div>

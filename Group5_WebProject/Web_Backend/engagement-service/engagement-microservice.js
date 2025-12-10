@@ -19,7 +19,7 @@ import { connectDB } from "./config/mongoose.js";
 connectDB();
 const app = express();
 app.use(cors({
-  origin: [config.cors.origin, "https://studio.apollographql.com"],
+  origin: Array.isArray(config.cors.origin) ? config.cors.origin : [config.cors.origin],
   credentials: config.cors.credentials,
 }));
 app.use(cookieParser());
@@ -52,7 +52,10 @@ const server = new ApolloServer({
 async function startServer() {
   await server.start();
   
-  app.use("/graphql", expressMiddleware(server, {
+  app.use("/graphql", cors({
+    origin: Array.isArray(config.cors.origin) ? config.cors.origin : [config.cors.origin, "https://studio.apollographql.com"],
+    credentials: config.cors.credentials,
+  }), expressMiddleware(server, {
     context: async ({ req, res }) => {
       // Authentication context
       const token = req.cookies?.token || 

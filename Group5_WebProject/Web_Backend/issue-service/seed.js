@@ -10,7 +10,7 @@ import Issue from './models/Issue.js';
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    await mongoose.connect(config.mongoDbUri);
+    await mongoose.connect(config.mongodbUri);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -33,7 +33,7 @@ const sampleIssues = [
     submitterId: 'user_1',
     submitterName: 'John Smith',
     upvotes: 24,
-    commentCount: 5,
+    comments: [],
     volunteers: [
       { userId: 'user_2', name: 'Sarah Johnson', joinedAt: new Date('2024-12-08') }
     ],
@@ -54,7 +54,7 @@ const sampleIssues = [
     submitterId: 'user_3',
     submitterName: 'Emma Wilson',
     upvotes: 15,
-    commentCount: 3,
+    comments: [],
     volunteers: [
       { userId: 'user_4', name: 'Michael Chen', joinedAt: new Date('2024-12-09') }
     ],
@@ -75,7 +75,7 @@ const sampleIssues = [
     submitterId: 'user_5',
     submitterName: 'Lisa Anderson',
     upvotes: 18,
-    commentCount: 4,
+    comments: [],
     volunteers: [
       { userId: 'user_6', name: 'David Martinez', joinedAt: new Date('2024-12-07') },
       { userId: 'user_7', name: 'Rachel Green', joinedAt: new Date('2024-12-09') }
@@ -97,7 +97,7 @@ const sampleIssues = [
     submitterId: 'user_8',
     submitterName: 'Robert Taylor',
     upvotes: 31,
-    commentCount: 7,
+    comments: [],
     volunteers: [
       { userId: 'user_9', name: 'Angela Moore', joinedAt: new Date('2024-12-06') },
       { userId: 'user_10', name: 'James White', joinedAt: new Date('2024-12-08') },
@@ -120,7 +120,7 @@ const sampleIssues = [
     submitterId: 'user_12',
     submitterName: 'Kevin Brown',
     upvotes: 8,
-    commentCount: 2,
+    comments: [],
     volunteers: [],
     createdAt: new Date('2024-11-25'),
     updatedAt: new Date('2024-12-06')
@@ -139,7 +139,7 @@ const sampleIssues = [
     submitterId: 'user_13',
     submitterName: 'Jessica Davis',
     upvotes: 22,
-    commentCount: 6,
+    comments: [],
     volunteers: [
       { userId: 'user_14', name: 'Thomas Rodriguez', joinedAt: new Date('2024-12-08') }
     ],
@@ -160,7 +160,7 @@ const sampleIssues = [
     submitterId: 'user_15',
     submitterName: 'Nancy Lee',
     upvotes: 12,
-    commentCount: 3,
+    comments: [],
     volunteers: [],
     createdAt: new Date('2024-12-07'),
     updatedAt: new Date('2024-12-07')
@@ -179,7 +179,7 @@ const sampleIssues = [
     submitterId: 'user_16',
     submitterName: 'Christopher Martinez',
     upvotes: 28,
-    commentCount: 8,
+    comments: [],
     volunteers: [
       { userId: 'user_17', name: 'Susan Jackson', joinedAt: new Date('2024-12-07') }
     ],
@@ -200,7 +200,7 @@ const sampleIssues = [
     submitterId: 'user_18',
     submitterName: 'Daniel Wilson',
     upvotes: 19,
-    commentCount: 4,
+    comments: [],
     volunteers: [],
     createdAt: new Date('2024-12-06'),
     updatedAt: new Date('2024-12-08')
@@ -219,7 +219,7 @@ const sampleIssues = [
     submitterId: 'user_19',
     submitterName: 'Barbara Miller',
     upvotes: 7,
-    commentCount: 1,
+    comments: [],
     volunteers: [],
     createdAt: new Date('2024-12-09'),
     updatedAt: new Date('2024-12-09')

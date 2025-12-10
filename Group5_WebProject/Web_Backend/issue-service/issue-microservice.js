@@ -26,7 +26,7 @@ const server = new ApolloServer({
 
 await server.start();
 
-app.use(config.graphqlEndpoint, expressMiddleware(server));
+app.use(config.graphqlEndpoint, cors(config.cors), expressMiddleware(server));
 
 // Health check
 app.get('/health', (req, res) => {

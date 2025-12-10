@@ -33,9 +33,15 @@ const CREATE_ISSUE_MUTATION = gql`
 
 const IssueReportPage = () => {
   const { user } = useAuth();
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+
   const [createIssue, { loading: isSubmitting }] = useMutation(CREATE_ISSUE_MUTATION, {
-    onSuccess: () => {
-      toast.success('Issue reported successfully!');
+    onCompleted: (data) => {
+      console.log('Issue created successfully:', data);
+      setSuccessData(data.createIssue);
+      setIsSubmitSuccess(true);
+      toast.success('✅ Issue reported successfully!');
       // Reset form
       setFormData({
         title: '',
@@ -50,7 +56,7 @@ const IssueReportPage = () => {
     },
     onError: (error) => {
       console.error('Error submitting issue:', error);
-      toast.error(error.message || 'Failed to submit issue. Please try again.');
+      toast.error(`❌ ${error.message || 'Failed to submit issue. Please try again.'}`);
     }
   });
 
@@ -243,6 +249,45 @@ const IssueReportPage = () => {
   };
 
   const remainingAttachmentSlots = 5 - attachments.length;
+
+  if (isSubmitSuccess) {
+    return (
+      <div className="issue-report-container">
+        <div className="success-overlay">
+          <div className="success-card">
+            <button
+              className="success-close-btn"
+              onClick={() => setIsSubmitSuccess(false)}
+              title="Close"
+            >
+              ✕
+            </button>
+            <div className="success-icon">✓</div>
+            <h2>Issue Reported Successfully!</h2>
+            <p className="success-subtitle">Thank you for reporting this issue</p>
+            {successData && (
+              <div className="success-details">
+                <p><strong>{successData.title}</strong></p>
+                <p className="issue-id">Issue ID: {successData.id?.substring(0, 8)}...</p>
+                <p className="status-badge" style={{ 
+                  backgroundColor: successData.status === 'open' ? '#3b82f6' : '#9ca3af' 
+                }}>
+                  {successData.status?.toUpperCase()}
+                </p>
+              </div>
+            )}
+            <p className="success-message">Your report has been submitted and is now visible to community members and municipal staff.</p>
+            <button
+              className="close-action-btn"
+              onClick={() => setIsSubmitSuccess(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="issue-report-container">

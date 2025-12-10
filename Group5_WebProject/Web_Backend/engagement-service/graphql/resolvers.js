@@ -83,62 +83,121 @@ const resolvers = {
   
   Mutation: {
     addComment: async (_, { issueId, content }, { user }) => {
-      if (!user) throw new Error('Authentication required');
-      
-      const comment = new Comment({
-        issueId,
-        text: content,
-        authorId: user.userId,
-      });
-      
-      await comment.save();
-      return await comment.populate('authorId', 'username email');
+      try {
+        if (!user) throw new Error('Authentication required');
+        
+        const comment = new Comment({
+          issueId,
+          text: content,
+          authorId: user.userId,
+          author: user.username,
+          createdAt: new Date()
+        });
+        
+        await comment.save();
+        return {
+          id: comment._id.toString(),
+          issueId: comment.issueId,
+          content: comment.text,
+          authorId: comment.authorId,
+          author: comment.author,
+          createdAt: comment.createdAt
+        };
+      } catch (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      }
     },
     
     upvoteIssue: async (_, { issueId }, { user }) => {
-      if (!user) throw new Error('Authentication required');
-      
-      const issue = await Issue.findById(issueId);
-      if (!issue) throw new Error('Issue not found');
-      
-      issue.upvotes = (issue.upvotes || 0) + 1;
-      await issue.save();
-      
-      return issue;
+      try {
+        if (!user) throw new Error('Authentication required');
+        
+        // Call the issue service to upvote
+        const issueServiceUrl = 'http://localhost:4003/graphql';
+        
+        const mutation = `
+          mutation {
+            upvoteIssue(id: "${issueId}") {
+              id
+              upvotes
+            }
+          }
+        `;
+        
+        const response = await fetch(issueServiceUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: mutation })
+        });
+        
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0].message);
+        }
+        
+        return data.data?.upvoteIssue;
+      } catch (error) {
+        console.error('Error upvoting issue:', error);
+        throw error;
+      }
     },
     
     volunteerForIssue: async (_, { issueId }, { user }) => {
-      if (!user) throw new Error('Authentication required');
-      
-      // Check if already volunteered
-      const existingVolunteer = await Volunteer.findOne({ 
-        issueId, 
-        userId: user.userId 
-      });
-      
-      if (existingVolunteer) {
-        throw new Error('Already volunteered for this issue');
-      }
-      
-      const volunteer = new Volunteer({
-        issueId,
-        userId: user.userId,
-        status: 'pending'
-      });
-      
-      await volunteer.save();
-      
-      // Add to issue volunteers array
-      const issue = await Issue.findById(issueId);
-      if (issue) {
-        if (!issue.volunteers) issue.volunteers = [];
-        if (!issue.volunteers.includes(user.userId)) {
-          issue.volunteers.push(user.userId);
-          await issue.save();
+      try {
+        if (!user) throw new Error('Authentication required');
+        
+        // Check if already volunteered
+        const existingVolunteer = await Volunteer.findOne({ 
+          issueId, 
+          userId: user.userId 
+        });
+        
+        if (existingVolunteer) {
+          throw new Error('Already volunteered for this issue');
         }
+        
+        // Call the issue service to add volunteer
+        const issueServiceUrl = 'http://localhost:4003/graphql';
+        
+        const mutation = `
+          mutation {
+            addVolunteer(id: "${issueId}", userId: "${user.userId}", name: "${user.username}") {
+              id
+              volunteers {
+                userId
+                name
+              }
+            }
+          }
+        `;
+        
+        const response = await fetch(issueServiceUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: mutation })
+        });
+        
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0].message);
+        }
+        
+        // Save volunteer record locally too
+        const volunteer = new Volunteer({
+          issueId,
+          userId: user.userId,
+          status: 'active',
+          createdAt: new Date()
+        });
+        
+        await volunteer.save();
+        
+        return data.data?.addVolunteer;
+      } catch (error) {
+        console.error('Error volunteering for issue:', error);
+        throw error;
       }
-      
-      return await volunteer.populate('userId', 'username email');
     },
     
     // Add missing mutations from typeDefs
