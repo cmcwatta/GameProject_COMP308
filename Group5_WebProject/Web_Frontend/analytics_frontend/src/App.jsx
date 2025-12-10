@@ -44,12 +44,23 @@ const Backlog = () => (
 );
 
 const Header = () => {
+  const handleBack = () => {
+    window.location.href = 'http://localhost:5173/dashboard';
+  };
+
   return (
     <header className="bg-purple-600 text-white shadow">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Civic Analytics</h1>
-          <nav className="flex space-x-4">
+          <nav className="flex space-x-4 items-center">
+            <button 
+              onClick={handleBack}
+              className="hover:bg-purple-700 px-3 py-2 rounded transition-colors"
+              title="Go back to Dashboard"
+            >
+              ← Back
+            </button>
             <a href="http://localhost:5173" className="hover:bg-purple-700 px-3 py-2 rounded">
               Dashboard
             </a>
@@ -59,7 +70,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 localStorage.removeItem('token');
-                window.location.href = 'http://localhost:5173/login';
+                window.location.href = 'http://localhost:5173/';
               }}
               className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded"
             >

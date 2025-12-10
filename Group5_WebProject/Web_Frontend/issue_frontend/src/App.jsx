@@ -5,29 +5,10 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../../shared/AuthContext';
 import { apolloClient } from '../../shared/apiClient';
 import ProtectedRoute from '../../shared/ProtectedRoute';
+import IssueReportPage from './pages/IssueReportPage';
+import IssueListPage from './pages/IssueListPage';
+import IssueDetailPage from './pages/IssueDetailPage';
 import './App.css';
-
-// Placeholder components - to be implemented
-const IssueList = () => (
-  <div className="p-6">
-    <h1 className="text-3xl font-bold mb-4">Issue Tracker</h1>
-    <p className="text-gray-600">Issue list and tracking features coming soon</p>
-  </div>
-);
-
-const IssueSubmission = () => (
-  <div className="p-6">
-    <h1 className="text-3xl font-bold mb-4">Report an Issue</h1>
-    <p className="text-gray-600">Issue submission form coming soon</p>
-  </div>
-);
-
-const IssueDetail = () => (
-  <div className="p-6">
-    <h1 className="text-3xl font-bold mb-4">Issue Details</h1>
-    <p className="text-gray-600">Issue detail view coming soon</p>
-  </div>
-);
 
 const IssueMap = () => (
   <div className="p-6">
@@ -37,12 +18,23 @@ const IssueMap = () => (
 );
 
 const Header = () => {
+  const handleBack = () => {
+    window.location.href = 'http://localhost:5173/dashboard';
+  };
+
   return (
     <header className="bg-blue-600 text-white shadow">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Civic Issue Tracker</h1>
-          <nav className="flex space-x-4">
+          <nav className="flex space-x-4 items-center">
+            <button 
+              onClick={handleBack}
+              className="hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+              title="Go back to Dashboard"
+            >
+              ← Back
+            </button>
             <a href="http://localhost:5173" className="hover:bg-blue-700 px-3 py-2 rounded">
               Dashboard
             </a>
@@ -52,7 +44,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 localStorage.removeItem('token');
-                window.location.href = 'http://localhost:5173/login';
+                window.location.href = 'http://localhost:5173/';
               }}
               className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded"
             >
@@ -83,16 +75,16 @@ function App() {
                   path="/issues" 
                   element={
                     <ProtectedRoute>
-                      <IssueList />
+                      <IssueListPage />
                     </ProtectedRoute>
                   } 
                 />
                 
                 <Route 
-                  path="/issues/new" 
+                  path="/report" 
                   element={
                     <ProtectedRoute>
-                      <IssueSubmission />
+                      <IssueReportPage />
                     </ProtectedRoute>
                   } 
                 />
@@ -101,7 +93,7 @@ function App() {
                   path="/issues/:id" 
                   element={
                     <ProtectedRoute>
-                      <IssueDetail />
+                      <IssueDetailPage />
                     </ProtectedRoute>
                   } 
                 />

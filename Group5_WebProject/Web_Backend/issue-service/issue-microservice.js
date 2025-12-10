@@ -12,7 +12,7 @@ const app = express();
 const PORT = config.port;
 
 // Middleware
-app.use(cors());
+app.use(cors(config.cors));
 app.use(express.json({ limit: '50mb' }));
 
 // Connect to MongoDB

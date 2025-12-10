@@ -15,6 +15,8 @@ export const config = {
       'http://localhost:3002',
       'http://localhost:4000',
       'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
       'https://studio.apollographql.com'
     ],
     credentials: true

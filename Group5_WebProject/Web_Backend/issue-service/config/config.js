@@ -4,6 +4,15 @@ export const config = {
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/issue-service',
   nodeEnv: process.env.NODE_ENV || 'development',
   gatewayUrl: process.env.GATEWAY_URL || 'http://localhost:4000',
+  cors: {
+    origin: process.env.CORS_ORIGIN?.split(',') || [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'https://studio.apollographql.com'
+    ],
+    credentials: true
+  }
 };
 
 export default config;
